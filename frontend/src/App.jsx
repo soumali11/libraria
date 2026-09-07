@@ -6,7 +6,7 @@ import LibraryScene from "./3d/LibraryScene";
 import ImmersiveLibraryScene from "./ImmersiveLibraryScene";
 import "./immersive-library.css";
 
-const API = "http://localhost:5000/api";
+const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const bookImages = {
   B001: "/src/assets/alchemist.jpg",
