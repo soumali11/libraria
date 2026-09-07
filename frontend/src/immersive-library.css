@@ -1,0 +1,48 @@
+
+.immersive-library-page{position:relative;min-height:calc(100vh - 76px);overflow:hidden;background:#07080d}
+.immersive-library-scene{position:absolute;inset:0;min-height:calc(100vh - 76px)}
+.immersive-library-scene canvas{display:block;width:100%!important;height:100%!important}
+.immersive-scene-vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at center,transparent 35%,rgba(4,5,9,.42) 100%),linear-gradient(90deg,rgba(4,5,9,.68),transparent 42%,rgba(4,5,9,.35))}
+.immersive-scene-label{position:absolute;left:38px;bottom:34px;z-index:3;max-width:360px;color:#fff;pointer-events:none}
+.immersive-scene-label span{display:block;margin-bottom:8px;color:#b8a7ff;font-size:11px;font-weight:700;letter-spacing:.22em}
+.immersive-scene-label strong{display:block;font-size:24px;line-height:1.15}
+.immersive-scene-label small{display:block;margin-top:7px;color:rgba(255,255,255,.62);font-size:12px}
+.immersive-library-overlay{position:relative;z-index:5;min-height:calc(100vh - 76px);padding:58px 5vw 44px;pointer-events:none}
+.immersive-library-heading{width:min(430px,70vw);color:#fff}
+.immersive-library-heading h1{margin:0 0 8px;font-size:clamp(44px,6vw,78px);line-height:.94;letter-spacing:-.05em}
+.immersive-library-heading p:last-child{margin:0;color:rgba(255,255,255,.66);font-size:15px}
+.immersive-library-list{position:absolute;right:5vw;top:58px;width:min(370px,30vw);display:flex;flex-direction:column;gap:9px;pointer-events:auto;padding:18px;border:1px solid rgba(255,255,255,.12);border-radius:20px;background:rgba(11,12,19,.55);backdrop-filter:blur(18px);box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.immersive-library-list-header{display:flex;align-items:center;justify-content:space-between;padding:2px 3px 8px;color:rgba(255,255,255,.7);font-size:10px;letter-spacing:.18em;font-weight:700}
+.immersive-library-list-header strong{color:#b8a7ff;font-size:12px;letter-spacing:0}
+.immersive-book-item{width:100%;display:grid;grid-template-columns:34px 1fr 24px;align-items:center;gap:10px;padding:13px 12px;border:1px solid rgba(255,255,255,.1);border-radius:13px;background:rgba(255,255,255,.045);color:#fff;text-align:left;cursor:pointer;transition:transform .25s ease,border-color .25s ease,background .25s ease;appearance:none}
+.immersive-book-item:hover,.immersive-book-item.selected{transform:translateX(-5px);border-color:rgba(184,167,255,.65);background:rgba(30,27,45,.78)}
+.immersive-book-number{color:#b8a7ff;font-size:11px;font-weight:700;letter-spacing:.08em}
+.immersive-book-details{min-width:0;display:flex;flex-direction:column;gap:3px}
+.immersive-book-details strong{font-size:13px;line-height:1.25;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.immersive-book-details small{color:rgba(255,255,255,.5);font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.immersive-book-arrow{color:rgba(255,255,255,.5);font-size:14px;text-align:center;transition:transform .2s ease,color .2s ease}
+.immersive-book-item:hover .immersive-book-arrow,.immersive-book-item.selected .immersive-book-arrow{transform:translate(2px,-2px);color:#fff}
+.immersive-return-card{position:absolute;right:5vw;bottom:36px;width:min(370px,30vw);padding:22px;border:1px solid rgba(255,255,255,.13);border-radius:20px;background:rgba(10,11,17,.7);backdrop-filter:blur(20px);color:#fff;pointer-events:auto;box-shadow:0 25px 70px rgba(0,0,0,.35)}
+.immersive-return-card-top{display:flex;justify-content:space-between;gap:12px;margin-bottom:12px;color:#b8a7ff;font-size:10px;font-weight:700;letter-spacing:.16em}
+.immersive-return-card h2{margin:0 0 6px;font-size:21px;line-height:1.2}
+.immersive-return-card>p{margin:0 0 18px;color:rgba(255,255,255,.58);font-size:13px}
+.immersive-return-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.immersive-return-meta div{padding:11px;border:1px solid rgba(255,255,255,.08);border-radius:11px;background:rgba(255,255,255,.035)}
+.immersive-return-meta span{display:block;margin-bottom:5px;color:rgba(255,255,255,.4);font-size:9px;letter-spacing:.13em}
+.immersive-return-meta strong{display:block;color:#fff;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.immersive-return-card .return-btn{width:100%}
+.immersive-empty-library{text-align:center;padding:18px 8px 5px}
+.immersive-empty-library>span{display:block;color:#b8a7ff;font-size:25px;margin-bottom:8px}
+.immersive-empty-library p{color:rgba(255,255,255,.58);font-size:12px;margin:0 0 12px}
+.immersive-empty-library .secondary-btn{width:100%}
+.immersive-library-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#07080d;color:#fff;gap:15px}
+.library-loader{width:34px;height:34px;border:2px solid rgba(255,255,255,.15);border-top-color:#b8a7ff;border-radius:50%;animation:librariaSpin .8s linear infinite}
+.immersive-book-popover{width:210px;padding:15px;border:1px solid rgba(255,255,255,.16);border-radius:15px;background:rgba(8,9,14,.92);backdrop-filter:blur(16px);color:#fff;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+.immersive-book-popover span{display:block;margin-bottom:6px;color:#b8a7ff;font-size:9px;font-weight:700;letter-spacing:.16em}
+.immersive-book-popover strong,.immersive-book-popover small{display:block}
+.immersive-book-popover strong{font-size:14px;line-height:1.3}
+.immersive-book-popover small{margin-top:5px;color:rgba(255,255,255,.55)}
+.immersive-book-popover button{margin-top:12px;padding:7px 10px;border:1px solid rgba(255,255,255,.14);border-radius:9px;background:transparent;color:#fff;cursor:pointer}
+@keyframes librariaSpin{to{transform:rotate(360deg)}}
+@media(max-width:900px){.immersive-library-overlay{padding:38px 22px 30px}.immersive-library-heading{width:80%}.immersive-library-list{right:22px;top:auto;bottom:30px;width:min(360px,calc(100vw - 44px))}.immersive-return-card{right:22px;bottom:210px;width:min(360px,calc(100vw - 44px))}.immersive-scene-label{display:none}}
+@media(max-width:600px){.immersive-library-page,.immersive-library-scene{min-height:calc(100vh - 66px)}.immersive-library-heading h1{font-size:46px}.immersive-library-heading p:last-child{font-size:13px}.immersive-library-list{bottom:18px;right:15px;width:calc(100vw - 30px);padding:14px}.immersive-return-card{right:15px;bottom:220px;width:calc(100vw - 30px)}}
