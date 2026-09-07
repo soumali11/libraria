@@ -4,15 +4,19 @@ import { QRCodeSVG } from "qrcode.react";
 import { Html5Qrcode } from "html5-qrcode";
 import LibraryScene from "./3d/LibraryScene";
 import ImmersiveLibraryScene from "./ImmersiveLibraryScene";
+import alchemistCover from "./assets/alchemist.jpg";
+import atomicHabitsCover from "./assets/atomic-habits.jpg";
+import silentPatientCover from "./assets/silent-patient.jpg";
+import psychologyMoneyCover from "./assets/psychology-of-money.jpg";
 import "./immersive-library.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const bookImages = {
-  B001: "/src/assets/alchemist.jpg",
-  B002: "/src/assets/atomic-habits.jpg",
-  B003: "/src/assets/silent-patient.jpg",
-  B004: "/src/assets/psychology-of-money.jpg",
+  B001: alchemistCover,
+  B002: atomicHabitsCover,
+  B003: silentPatientCover,
+  B004: psychologyMoneyCover,
 };
 
 function getImage(book) {
