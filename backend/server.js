@@ -15,6 +15,50 @@ let db;
 let booksCollection;
 let transactionsCollection;
 
+function addDays(date, days) {
+    const result = new Date(date);
+    result.setDate(result.getDate() + days);
+    return result;
+}
+
+function decorateTransaction(transaction) {
+    if (!transaction) return transaction;
+    const issueDate = transaction.issueDate ? new Date(transaction.issueDate) : null;
+    const dueDate = transaction.dueDate
+        ? new Date(transaction.dueDate)
+        : issueDate
+            ? addDays(issueDate, 14)
+            : null;
+    const referenceDate = transaction.status === "Returned" && transaction.returnDate
+        ? new Date(transaction.returnDate)
+        : new Date();
+    const daysOverdue = dueDate
+        ? Math.max(
+            0,
+            Math.floor(
+                (
+                    new Date(
+                        referenceDate.getFullYear(),
+                        referenceDate.getMonth(),
+                        referenceDate.getDate()
+                    ) -
+                    new Date(
+                        dueDate.getFullYear(),
+                        dueDate.getMonth(),
+                        dueDate.getDate()
+                    )
+                ) / 86400000
+            )
+        )
+        : 0;
+
+    return {
+        ...transaction,
+        dueDate,
+        daysOverdue
+    };
+}
+
 async function connectDB() {
     try {
         await client.connect();
@@ -297,17 +341,21 @@ app.post("/api/books/:bookId/issue", async (req, res) => {
                     issuedCopies: 1
                 },
                 $set: {
-                    status: "Available"
+                    status: book.availableCopies - 1 > 0
+                        ? "Available"
+                        : "Unavailable"
                 }
             }
         );
 
+        const issueDate = new Date();
         const transaction = {
             bookId: bookId,
             title: book.title,
             studentId: studentId,
             studentName: studentName,
-            issueDate: new Date(),
+            issueDate: issueDate,
+            dueDate: addDays(issueDate, 14),
             returnDate: null,
             status: "Issued"
         };
@@ -319,10 +367,10 @@ app.post("/api/books/:bookId/issue", async (req, res) => {
 
         res.status(201).json({
             message: "Book issued successfully",
-            transaction: {
+            transaction: decorateTransaction({
                 _id: result.insertedId,
                 ...transaction
-            }
+            })
         });
 
     } catch (error) {
@@ -449,7 +497,7 @@ app.post("/api/books/:bookId/return", async (req, res) => {
         res.json({
             message: "Book returned successfully",
             book: updatedBook,
-            transaction: updatedTransaction
+            transaction: decorateTransaction(updatedTransaction)
         });
 
     } catch (error) {
@@ -466,15 +514,133 @@ app.get("/api/transactions", async (req, res) => {
         const transactions =
             await transactionsCollection
                 .find()
+                .sort({ issueDate: -1 })
                 .toArray();
 
-        res.json(transactions);
+        res.json(transactions.map(decorateTransaction));
 
     } catch (error) {
         console.error(error);
 
         res.status(500).json({
             message: "Failed to fetch transactions"
+        });
+    }
+});
+
+app.post("/api/ai/chat", async (req, res) => {
+    try {
+        const apiKey = process.env.GEMINI_API_KEY;
+
+        if (!apiKey) {
+            return res.status(503).json({
+                message: "GEMINI_API_KEY is not configured"
+            });
+        }
+
+        const { message, history = [] } = req.body;
+
+        if (!message || !message.trim()) {
+            return res.status(400).json({
+                message: "Message is required"
+            });
+        }
+
+        const books = await booksCollection
+            .find({}, {
+                projection: {
+                    _id: 0,
+                    bookId: 1,
+                    title: 1,
+                    author: 1,
+                    category: 1,
+                    totalCopies: 1,
+                    availableCopies: 1,
+                    issuedCopies: 1,
+                    status: 1
+                }
+            })
+            .toArray();
+
+        const catalog = books.map((book) => ({
+            id: book.bookId,
+            title: book.title,
+            author: book.author,
+            category: book.category,
+            totalCopies: book.totalCopies,
+            availableCopies: book.availableCopies,
+            status: book.status
+        }));
+
+        const historyText = Array.isArray(history)
+            ? history
+                .slice(-8)
+                .map((item) => `${item.role === "user" ? "User" : "Lira"}: ${item.text}`)
+                .join("\n")
+            : "";
+
+        const systemPrompt = `You are Lira, the intelligent AI librarian inside Libraria.
+Only make factual claims about this library's catalogue from the supplied catalogue data.
+You can recommend books, compare titles, explain availability, suggest books by category, and help users understand how the library works.
+If a requested book is not in the catalogue, say that clearly and suggest the closest available options from the catalogue.
+Keep responses concise, friendly, and useful. Never invent books, authors, quantities, or availability.
+Library catalogue:
+${JSON.stringify(catalog, null, 2)}
+
+Conversation history:
+${historyText}`;
+
+        const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+        const geminiResponse = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    systemInstruction: {
+                        parts: [{ text: systemPrompt }]
+                    },
+                    contents: [
+                        {
+                            role: "user",
+                            parts: [{ text: message.trim() }]
+                        }
+                    ],
+                    generationConfig: {
+                        temperature: 0.45,
+                        maxOutputTokens: 500
+                    }
+                })
+            }
+        );
+
+        const data = await geminiResponse.json();
+
+        if (!geminiResponse.ok) {
+            console.error("Gemini API error:", data);
+            return res.status(502).json({
+                message: "Gemini could not process the request"
+            });
+        }
+
+        const reply = data?.candidates?.[0]?.content?.parts
+            ?.map((part) => part.text || "")
+            .join("")
+            .trim();
+
+        if (!reply) {
+            return res.status(502).json({
+                message: "Gemini returned an empty response"
+            });
+        }
+
+        res.json({ reply });
+    } catch (error) {
+        console.error("AI assistant error:", error);
+        res.status(500).json({
+            message: "AI assistant is temporarily unavailable"
         });
     }
 });

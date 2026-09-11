@@ -1,4 +1,4 @@
-import { Routes, Route, Link, useNavigate, useParams, useLocation } from "react-router-dom";
+import { Routes, Route, Link, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Html5Qrcode } from "html5-qrcode";
@@ -11,280 +11,6 @@ import psychologyMoneyCover from "./assets/psychology-of-money.jpg";
 import "./immersive-library.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-
-const wowStyles = `
-:root {
-  --wow-purple: #8d7cff;
-  --wow-pink: #d86ca0;
-  --wow-cyan: #63d8ff;
-}
-
-body {
-  background:
-    radial-gradient(circle at 8% 5%, rgba(141,124,255,.13), transparent 27%),
-    radial-gradient(circle at 92% 22%, rgba(216,108,160,.10), transparent 28%),
-    var(--bg);
-  background-attachment: fixed;
-}
-
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
-  background-image: radial-gradient(rgba(255,255,255,.075) .7px, transparent .7px);
-  background-size: 34px 34px;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,.5), transparent 78%);
-}
-
-.navbar {
-  position: sticky;
-  top: 0;
-  height: 82px;
-  padding: 0 clamp(18px,5vw,72px);
-  background: rgba(10,11,17,.72);
-  backdrop-filter: blur(22px) saturate(150%);
-  -webkit-backdrop-filter: blur(22px) saturate(150%);
-  border-bottom: 1px solid rgba(255,255,255,.08);
-  box-shadow: 0 12px 40px rgba(0,0,0,.18);
-}
-
-[data-theme="light"] .navbar { background: rgba(248,248,252,.78); }
-
-.logo {
-  position: relative;
-  font-size: 22px;
-  letter-spacing: -.4px;
-  text-shadow: 0 0 24px rgba(141,124,255,.32);
-}
-
-.logo::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: -7px;
-  width: 34px;
-  height: 2px;
-  border-radius: 99px;
-  background: linear-gradient(90deg,var(--wow-purple),var(--wow-pink));
-  box-shadow: 0 0 14px rgba(141,124,255,.65);
-}
-
-.nav-links {
-  gap: 5px;
-  padding: 7px;
-  border: 1px solid rgba(255,255,255,.07);
-  border-radius: 18px;
-  background: rgba(255,255,255,.025);
-}
-
-.nav-links a {
-  position: relative;
-  padding: 10px 13px;
-  border-radius: 12px;
-  transition: transform .25s ease,color .25s ease,background .25s ease,box-shadow .25s ease;
-}
-
-.nav-links a:hover { color: var(--text); transform: translateY(-1px); background: rgba(255,255,255,.055); }
-.nav-links a.nav-active { color:#fff; background:linear-gradient(135deg,rgba(141,124,255,.24),rgba(216,108,160,.13)); box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 8px 22px rgba(0,0,0,.16); }
-.nav-links a.nav-active::after { content:""; position:absolute; left:50%; bottom:4px; width:18px; height:2px; border-radius:99px; transform:translateX(-50%); background:linear-gradient(90deg,var(--wow-purple),var(--wow-pink)); }
-
-.theme-btn,.login-btn {
-  border:1px solid rgba(255,255,255,.1);
-  background:rgba(255,255,255,.045);
-  color:var(--text);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 10px 28px rgba(0,0,0,.16);
-  transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;
-}
-.theme-btn:hover,.login-btn:hover { transform:translateY(-2px); border-color:rgba(141,124,255,.4); box-shadow:0 12px 30px rgba(141,124,255,.14); }
-
-.content {
-  position:relative;
-  width:min(1400px,92%);
-  margin:0 auto;
-  padding-top:70px;
-  padding-bottom:100px;
-}
-
-.page-heading {
-  position:relative;
-  padding:34px 38px;
-  border:1px solid rgba(255,255,255,.09);
-  border-radius:28px;
-  background:linear-gradient(135deg,rgba(141,124,255,.12),rgba(255,255,255,.035) 48%,rgba(216,108,160,.08));
-  box-shadow:0 28px 70px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.08);
-  overflow:hidden;
-}
-.page-heading::after { content:""; position:absolute; width:230px; height:230px; right:-100px; top:-125px; border:1px solid rgba(255,255,255,.09); border-radius:50%; box-shadow:0 0 80px rgba(141,124,255,.12); pointer-events:none; }
-.page-heading h1 { font-size:clamp(40px,5vw,72px); letter-spacing:-3px; text-shadow:0 12px 35px rgba(0,0,0,.25); }
-.section-label { color:#b19cff; letter-spacing:4px; font-weight:700; text-shadow:0 0 18px rgba(141,124,255,.25); }
-
-.primary-btn,.secondary-btn,.issue-btn,.return-btn,.delete-btn,.edit-btn,.qr-btn { transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease,filter .25s ease; }
-.primary-btn { border:1px solid rgba(255,255,255,.12); background:linear-gradient(135deg,#fff,#ddd8ff); color:#10111a; box-shadow:0 12px 32px rgba(141,124,255,.18),inset 0 1px 0 #fff; }
-.primary-btn:hover { transform:translateY(-3px) scale(1.01); box-shadow:0 18px 42px rgba(141,124,255,.27); }
-.secondary-btn { border-color:rgba(255,255,255,.12); background:linear-gradient(135deg,rgba(255,255,255,.075),rgba(255,255,255,.025)); box-shadow:inset 0 1px 0 rgba(255,255,255,.06); }
-.secondary-btn:hover { transform:translateY(-3px); border-color:rgba(141,124,255,.42); box-shadow:0 14px 32px rgba(0,0,0,.2),0 0 24px rgba(141,124,255,.1); }
-
-.books-grid,.category-grid,.scan-layout,.manage-layout { perspective:1400px; }
-
-.book-card {
-  position:relative;
-  overflow:hidden;
-  border:1px solid rgba(255,255,255,.09);
-  border-radius:24px;
-  background:linear-gradient(145deg,rgba(28,29,39,.94),rgba(16,17,24,.9));
-  box-shadow:0 24px 50px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.06);
-  transform-style:preserve-3d;
-  transition:transform .45s cubic-bezier(.2,.8,.2,1),box-shadow .45s ease,border-color .45s ease;
-}
-.book-card::before { content:""; position:absolute; width:190px; height:190px; top:-115px; right:-90px; border-radius:50%; background:rgba(141,124,255,.14); filter:blur(25px); pointer-events:none; }
-.book-card:hover { transform:translateY(-10px) rotateX(2deg) rotateY(-2deg); border-color:rgba(141,124,255,.35); box-shadow:0 38px 75px rgba(0,0,0,.34),0 0 35px rgba(141,124,255,.1),inset 0 1px 0 rgba(255,255,255,.1); }
-.book-image { background:linear-gradient(135deg,#252634,#11121a); overflow:hidden; }
-.book-image img { transition:transform .65s cubic-bezier(.2,.8,.2,1),filter .65s ease; }
-.book-card:hover .book-image img { transform:scale(1.07) translateZ(15px); filter:saturate(1.12) contrast(1.04); }
-.book-info { position:relative; z-index:2; }
-.book-category { border:1px solid rgba(141,124,255,.22); background:rgba(141,124,255,.08); border-radius:99px; padding:5px 10px; display:inline-flex; }
-
-.category-card { position:relative; overflow:hidden; border:1px solid rgba(255,255,255,.1); border-radius:26px; background:linear-gradient(145deg,rgba(141,124,255,.12),rgba(255,255,255,.035)); box-shadow:0 24px 55px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.07); transform-style:preserve-3d; transition:transform .4s ease,box-shadow .4s ease,border-color .4s ease; }
-.category-card::after { content:""; position:absolute; width:160px; height:160px; right:-60px; bottom:-70px; border-radius:50%; border:1px solid rgba(255,255,255,.08); box-shadow:0 0 60px rgba(216,108,160,.13); }
-.category-card:hover { transform:translateY(-12px) rotateX(3deg) rotateY(-3deg) scale(1.01); border-color:rgba(141,124,255,.38); box-shadow:0 38px 80px rgba(0,0,0,.3),0 0 35px rgba(141,124,255,.12); }
-.category-icon { filter:drop-shadow(0 12px 22px rgba(141,124,255,.22)); transform:translateZ(28px); }
-
-.dashboard-panel,.manage-form,.manage-books,.scan-panel,.scan-result,.login-card,.qr-modal { border:1px solid rgba(255,255,255,.1); background:linear-gradient(145deg,rgba(25,26,35,.88),rgba(15,16,23,.82)); box-shadow:0 28px 65px rgba(0,0,0,.23),inset 0 1px 0 rgba(255,255,255,.065); backdrop-filter:blur(16px); }
-.dashboard-panel:hover,.manage-form:hover,.manage-books:hover,.scan-panel:hover,.scan-result:hover { border-color:rgba(141,124,255,.23); }
-.stat-card { border:1px solid rgba(255,255,255,.1); background:linear-gradient(145deg,rgba(28,29,39,.95),rgba(16,17,24,.9)); box-shadow:0 22px 45px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.07); }
-.stat-icon { filter:drop-shadow(0 8px 18px rgba(141,124,255,.18)); }
-
-.search-box,.dashboard-filters input,.dashboard-filters select,.dashboard-filters input[type="date"],.manage-form input,.manual-scan input,.login-card input { border:1px solid rgba(255,255,255,.1)!important; background:rgba(8,9,14,.62)!important; box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 10px 30px rgba(0,0,0,.12); transition:border-color .25s ease,box-shadow .25s ease,transform .25s ease; }
-.search-box:focus,.dashboard-filters input:focus,.dashboard-filters select:focus,.dashboard-filters input[type="date"]:focus,.manage-form input:focus,.manual-scan input:focus,.login-card input:focus { border-color:rgba(141,124,255,.55)!important; box-shadow:0 0 0 4px rgba(141,124,255,.08),0 12px 35px rgba(0,0,0,.16); outline:none; }
-
-.scan-tabs { padding:5px; border-radius:16px; background:rgba(255,255,255,.035); }
-.scan-tab { border:0; border-radius:12px; }
-.scan-tab.active { background:linear-gradient(135deg,var(--wow-purple),#6f5ae8); box-shadow:0 10px 28px rgba(141,124,255,.23); }
-#qr-reader { border-radius:20px; overflow:hidden; background:#08090e; border:1px solid rgba(255,255,255,.08); box-shadow:inset 0 0 0 1px rgba(255,255,255,.025),0 22px 45px rgba(0,0,0,.24); }
-#qr-reader video { border-radius:16px; }
-.scanned-book-details > div { background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.015)); border-color:rgba(255,255,255,.09); }
-
-.manage-book-row { padding:20px 14px; border-radius:16px; transition:transform .25s ease,background .25s ease; }
-.manage-book-row:hover { transform:translateX(5px); background:rgba(255,255,255,.035); }
-
-.immersive-library-page { background:radial-gradient(circle at 50% 30%,rgba(141,124,255,.08),transparent 38%),var(--bg); }
-.immersive-library-heading h1 { text-shadow:0 15px 45px rgba(0,0,0,.3); }
-.immersive-book-item,.immersive-return-card { border-color:rgba(255,255,255,.1)!important; box-shadow:0 24px 55px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.06); backdrop-filter:blur(14px); }
-
-.login-page { position:relative; overflow:hidden; background:radial-gradient(circle at 25% 30%,rgba(141,124,255,.17),transparent 28%),radial-gradient(circle at 78% 65%,rgba(216,108,160,.12),transparent 30%),var(--bg); }
-.login-page::before,.login-page::after { content:""; position:absolute; border:1px solid rgba(255,255,255,.07); border-radius:50%; pointer-events:none; animation:wowOrbit 12s linear infinite; }
-.login-page::before { width:520px; height:520px; left:-260px; top:10%; }
-.login-page::after { width:380px; height:380px; right:-180px; bottom:5%; animation-direction:reverse; }
-.login-card { border-radius:30px; transform:perspective(1200px) rotateX(1deg); }
-.login-icon { filter:drop-shadow(0 16px 28px rgba(141,124,255,.25)); }
-.qr-modal-overlay { backdrop-filter:blur(12px); background:rgba(4,5,9,.68)!important; }
-.qr-modal { border-radius:28px!important; transform:perspective(1200px) rotateX(1deg); }
-.empty-box { border:1px dashed rgba(255,255,255,.14); border-radius:26px; background:linear-gradient(145deg,rgba(141,124,255,.06),rgba(255,255,255,.02)); box-shadow:0 25px 55px rgba(0,0,0,.18); }
-
- .ai-launcher {
-  position: fixed;
-  right: 24px;
-  bottom: 24px;
-  z-index: 9000;
-  width: 62px;
-  height: 62px;
-  border: 1px solid rgba(255,255,255,.18);
-  border-radius: 20px;
-  background: linear-gradient(135deg, rgba(141,124,255,.95), rgba(216,108,160,.9));
-  color: white;
-  font-size: 25px;
-  cursor: pointer;
-  box-shadow: 0 18px 45px rgba(0,0,0,.35), 0 0 35px rgba(141,124,255,.2);
-  transition: transform .25s ease, box-shadow .25s ease;
-}
-.ai-launcher:hover { transform: translateY(-5px) scale(1.04); box-shadow: 0 24px 55px rgba(0,0,0,.4), 0 0 45px rgba(141,124,255,.28); }
-.ai-panel {
-  position: fixed;
-  right: 24px;
-  bottom: 98px;
-  z-index: 8999;
-  width: min(420px, calc(100vw - 32px));
-  height: min(610px, calc(100vh - 130px));
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 28px;
-  background: rgba(12,13,20,.94);
-  backdrop-filter: blur(24px) saturate(140%);
-  box-shadow: 0 30px 90px rgba(0,0,0,.45), 0 0 45px rgba(141,124,255,.1);
-}
-.ai-panel-header {
-  padding: 20px;
-  background: linear-gradient(135deg, rgba(141,124,255,.2), rgba(216,108,160,.1));
-  border-bottom: 1px solid rgba(255,255,255,.08);
-}
-.ai-panel-header h3 { margin: 4px 0; font-size: 1.3rem; }
-.ai-close { border: 0; background: rgba(255,255,255,.06); color: var(--text); border-radius: 10px; width: 34px; height: 34px; cursor: pointer; }
-.ai-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-.ai-message { max-width: 88%; padding: 12px 14px; border-radius: 16px; line-height: 1.5; white-space: pre-wrap; }
-.ai-message.assistant { align-self: flex-start; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.07); }
-.ai-message.user { align-self: flex-end; background: linear-gradient(135deg, rgba(141,124,255,.32), rgba(216,108,160,.22)); border: 1px solid rgba(141,124,255,.22); }
-.ai-quick-prompts { display: flex; gap: 7px; padding: 0 16px 12px; overflow-x: auto; }
-.ai-quick-prompts button { white-space: nowrap; border: 1px solid rgba(255,255,255,.09); background: rgba(255,255,255,.04); color: var(--text); border-radius: 999px; padding: 8px 10px; cursor: pointer; }
-.ai-input { display: flex; gap: 8px; padding: 14px; border-top: 1px solid rgba(255,255,255,.08); }
-.ai-input input { flex: 1; min-width: 0; border: 1px solid rgba(255,255,255,.1); background: rgba(0,0,0,.3); color: var(--text); border-radius: 14px; padding: 12px; outline: none; }
-.ai-input button { border: 0; border-radius: 14px; padding: 0 16px; background: linear-gradient(135deg,#8d7cff,#d86ca0); color: white; font-weight: 700; cursor: pointer; }
-.loan-health-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
-.loan-health-card { padding: 14px; border-radius: 16px; background: rgba(255,255,255,.045); border: 1px solid rgba(255,255,255,.08); }
-.loan-health-card span,.loan-health-card small { display:block; opacity:.65; font-size:.78rem; }
-.loan-health-card strong { display:block; font-size:1.8rem; margin:5px 0; }
-.loan-health-card.warning { border-color: rgba(255,196,90,.22); }
-.loan-health-card.danger { border-color: rgba(255,92,92,.25); }
-.loan-health-message { margin-top: 12px; padding: 11px 13px; border-radius: 13px; background: rgba(255,255,255,.035); font-size: .9rem; }
-.loan-badge { display:inline-flex; padding:5px 9px; border-radius:999px; font-size:.76rem; white-space:nowrap; }
-.loan-badge.on-track { background:rgba(87,211,135,.12); color:#78e39c; border:1px solid rgba(87,211,135,.2); }
-.loan-badge.due-soon { background:rgba(255,194,83,.12); color:#ffd27a; border:1px solid rgba(255,194,83,.2); }
-.loan-badge.overdue { background:rgba(255,80,80,.12); color:#ff9292; border:1px solid rgba(255,80,80,.2); }
-.overdue-text { color:#ff9292; }
-.immersive-due-meta { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.08); display:flex; justify-content:space-between; gap:12px; }
-.immersive-due-meta span { opacity:.6; font-size:.75rem; letter-spacing:1px; }
-@media (max-width:850px) {
-  .ai-panel { right: 16px; bottom: 88px; }
-  .ai-launcher { right: 16px; bottom: 16px; }
-  .loan-health-grid { grid-template-columns:1fr; }
-}
-
-@keyframes wowOrbit { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-
-@media (max-width:1100px) { .nav-links{gap:2px}.nav-links a{padding:9px 8px} }
-@media (max-width:850px) { .navbar{height:auto;min-height:76px;flex-wrap:wrap;gap:12px;padding:14px 18px}.nav-links{order:3;width:100%;overflow-x:auto;justify-content:flex-start}.nav-actions{margin-left:auto}.content{width:min(94%,700px);padding-top:38px}.page-heading{padding:25px 22px;border-radius:22px}.book-card:hover,.category-card:hover{transform:translateY(-6px)} }
-`;
-
-
-
-function notify(message, type = "success") {
-  window.dispatchEvent(
-    new CustomEvent("libraria-toast", {
-      detail: { message, type },
-    })
-  );
-}
-
-async function hasActiveIssue(user, bookId) {
-  if (!user?.studentId) return false;
-
-  try {
-    const response = await fetch(`${API}/transactions`);
-    const data = await response.json();
-    if (!response.ok || !Array.isArray(data)) return false;
-    return data.some(
-      (transaction) =>
-        transaction.studentId === user.studentId &&
-        transaction.bookId === bookId &&
-        transaction.status === "Issued"
-    );
-  } catch (error) {
-    return false;
-  }
-}
 
 const bookImages = {
   B001: alchemistCover,
@@ -301,41 +27,8 @@ function normalizeCategory(category = "") {
   return category.toLowerCase().replace(/[-_\s]/g, "");
 }
 
-function getDueDate(transaction) {
-  if (transaction?.dueDate) return new Date(transaction.dueDate);
-  if (!transaction?.issueDate) return null;
-  const dueDate = new Date(transaction.issueDate);
-  dueDate.setDate(dueDate.getDate() + 14);
-  return dueDate;
-}
-
-function getOverdueDays(transaction) {
-  const dueDate = getDueDate(transaction);
-  if (!dueDate) return 0;
-  const referenceDate = transaction?.status === "Returned" && transaction?.returnDate
-    ? new Date(transaction.returnDate)
-    : new Date();
-  const start = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
-  const due = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-  return Math.max(0, Math.floor((start - due) / 86400000));
-}
-
-function getDueStatus(transaction) {
-  const overdueDays = getOverdueDays(transaction);
-  if (overdueDays > 0) return `Overdue by ${overdueDays} day${overdueDays === 1 ? "" : "s"}`;
-  const dueDate = getDueDate(transaction);
-  if (!dueDate) return "No due date";
-  const today = new Date();
-  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  const dueStart = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-  const daysLeft = Math.ceil((dueStart - todayStart) / 86400000);
-  if (daysLeft <= 3) return daysLeft === 0 ? "Due today" : `Due in ${daysLeft} day${daysLeft === 1 ? "" : "s"}`;
-  return "On track";
-}
-
 function Navbar({ theme, setTheme }) {
   const navigate = useNavigate();
-  const location = useLocation();
   const [user, setUser] = useState(
     JSON.parse(localStorage.getItem("librariaUser")) || null
   );
@@ -358,10 +51,7 @@ function Navbar({ theme, setTheme }) {
         <Link to="/categories">Categories</Link>
         <Link to="/library">My Library</Link>
         <Link to="/scan">Scan QR</Link>
-
-        {user?.role === "librarian" && (
-          <Link to="/manage">Manage Books</Link>
-        )}
+        <Link to="/manage">Manage Books</Link>
 
         {user && (
           <Link to="/dashboard">Dashboard</Link>
@@ -444,90 +134,64 @@ function Home({ theme, setTheme }) {
 
 function BookCard({ book, user, onIssue, onDelete }) {
   const image = getImage(book);
-  const [showDetails, setShowDetails] = useState(false);
 
   return (
-    <>
-      <div className="book-card">
-        <div className="book-image">
-          {image ? (
-            <img src={image} alt={book.title} />
-          ) : (
-            <div className="book-placeholder">📖</div>
-          )}
-        </div>
-
-        <div className="book-info">
-          <span className="book-category">{book.category}</span>
-          <h3>{book.title}</h3>
-          <p>by {book.author}</p>
-
-          <div className="book-details">
-            <span>Total: {book.totalCopies}</span>
-            <span>Available: {book.availableCopies}</span>
-          </div>
-
-          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "12px" }}>
-            <button className="secondary-btn" onClick={() => setShowDetails(true)}>View Details</button>
-            {onIssue && (
-              <button
-                className="issue-btn"
-                disabled={!user || book.availableCopies <= 0}
-                onClick={() => onIssue(book)}
-              >
-                {!user ? "Sign In to Issue" : book.availableCopies <= 0 ? "Unavailable" : "Issue Book"}
-              </button>
-            )}
-            {onDelete && (
-              <button className="delete-btn" onClick={() => onDelete(book.bookId)}>Delete</button>
-            )}
-          </div>
-        </div>
+    <div className="book-card">
+      <div className="book-image">
+        {image ? (
+          <img src={image} alt={book.title} />
+        ) : (
+          <div className="book-placeholder">📖</div>
+        )}
       </div>
 
-      {showDetails && (
-        <div className="qr-modal-overlay" onClick={() => setShowDetails(false)}>
-          <div className="qr-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "560px" }}>
-            <button className="qr-modal-close" onClick={() => setShowDetails(false)}>×</button>
-            <p className="section-label">BOOK DETAILS</p>
-            <div style={{ display: "grid", gridTemplateColumns: "140px 1fr", gap: "22px", alignItems: "start" }}>
-              <div className="book-image" style={{ minHeight: "190px" }}>
-                {image ? <img src={image} alt={book.title} /> : <div className="book-placeholder">📖</div>}
-              </div>
-              <div>
-                <span className="book-category">{book.category}</span>
-                <h2 style={{ marginBottom: "6px" }}>{book.title}</h2>
-                <p>{book.author}</p>
-                <div style={{ display: "grid", gap: "8px", marginTop: "18px" }}>
-                  <div><strong>Book ID:</strong> {book.bookId}</div>
-                  <div><strong>Total Copies:</strong> {book.totalCopies}</div>
-                  <div><strong>Available:</strong> {book.availableCopies}</div>
-                  <div><strong>Issued:</strong> {Number(book.issuedCopies || 0)}</div>
-                  <div><strong>Status:</strong> {book.availableCopies > 0 ? "Available" : "Unavailable"}</div>
-                </div>
-              </div>
-            </div>
-            <div className="qr-modal-actions" style={{ marginTop: "22px" }}>
-              {onIssue && (
-                <button className="primary-btn" disabled={!user || book.availableCopies <= 0} onClick={() => { setShowDetails(false); onIssue(book); }}>
-                  {!user ? "Sign In to Issue" : book.availableCopies <= 0 ? "Unavailable" : "Issue Book"}
-                </button>
-              )}
-              <button className="secondary-btn" onClick={() => setShowDetails(false)}>Close</button>
-            </div>
-          </div>
+      <div className="book-info">
+        <span className="book-category">
+          {book.category}
+        </span>
+
+        <h3>{book.title}</h3>
+
+        <p>by {book.author}</p>
+
+        <div className="book-details">
+          <span>Total: {book.totalCopies}</span>
+
+          <span>
+            Available: {book.availableCopies}
+          </span>
         </div>
-      )}
-    </>
+
+        {onIssue && (
+          <button
+            className="issue-btn"
+            disabled={!user || book.availableCopies <= 0}
+            onClick={() => onIssue(book)}
+          >
+            {!user
+              ? "Sign In to Issue"
+              : book.availableCopies <= 0
+              ? "Unavailable"
+              : "Issue Book"}
+          </button>
+        )}
+
+        {onDelete && (
+          <button
+            className="delete-btn"
+            onClick={() => onDelete(book.bookId)}
+          >
+            Delete
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
 function Books({ theme, setTheme }) {
   const [books, setBooks] = useState([]);
-  const [transactions, setTransactions] = useState([]);
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("All");
-  const [sortBy, setSortBy] = useState("title");
 
   const user =
     JSON.parse(localStorage.getItem("librariaUser")) || null;
@@ -544,20 +208,11 @@ function Books({ theme, setTheme }) {
 
   useEffect(() => {
     loadBooks();
-    fetch(`${API}/transactions`)
-      .then((response) => response.json())
-      .then((data) => setTransactions(Array.isArray(data) ? data : []))
-      .catch(() => setTransactions([]));
   }, []);
 
   async function issueBook(book) {
     if (!user) {
-      notify("Please sign in first.", "error");
-      return;
-    }
-
-    if (await hasActiveIssue(user, book.bookId)) {
-      notify("You already have this book issued. Return it before issuing it again.", "error");
+      alert("Please sign in first.");
       return;
     }
 
@@ -579,53 +234,23 @@ function Books({ theme, setTheme }) {
       const data = await response.json();
 
       if (!response.ok) {
-        notify(data.message);
+        alert(data.message);
         return;
       }
 
-      notify("Book issued successfully! 📚");
+      alert("Book issued successfully! 📚");
 
       loadBooks();
     } catch (error) {
-      notify("Unable to issue book.");
+      alert("Unable to issue book.");
     }
   }
 
-  const categories = [
-    "All",
-    ...Array.from(new Set(books.map((book) => book.category).filter(Boolean))),
-  ];
-
-  const filteredBooks = books
-    .filter((book) => {
-      const matchesSearch = `${book.title} ${book.author} ${book.category}`
-        .toLowerCase()
-        .includes(search.toLowerCase());
-      const matchesCategory = categoryFilter === "All" || book.category === categoryFilter;
-      return matchesSearch && matchesCategory;
-    })
-    .sort((a, b) => {
-      if (sortBy === "availability") {
-        return Number(b.availableCopies || 0) - Number(a.availableCopies || 0);
-      }
-      if (sortBy === "popular") {
-        const aCount = transactions.filter((item) => item.bookId === a.bookId).length;
-        const bCount = transactions.filter((item) => item.bookId === b.bookId).length;
-        return bCount - aCount;
-      }
-      return a.title.localeCompare(b.title);
-    });
-
-  const popularBooks = books
-    .map((book) => ({
-      ...book,
-      borrowCount: transactions.filter((item) => item.bookId === book.bookId).length,
-    }))
-    .sort((a, b) => b.borrowCount - a.borrowCount)
-    .slice(0, 3);
-
-  const totalCopies = books.reduce((sum, book) => sum + Number(book.totalCopies || 0), 0);
-  const availableCopies = books.reduce((sum, book) => sum + Number(book.availableCopies || 0), 0);
+  const filteredBooks = books.filter((book) =>
+    `${book.title} ${book.author} ${book.category}`
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
 
   return (
     <>
@@ -641,62 +266,13 @@ function Books({ theme, setTheme }) {
             <p>Find your next favourite book.</p>
           </div>
 
-          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "flex-end" }}>
-            <input
-              className="search-box"
-              placeholder="🔍 Search books..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <select
-              className="search-box"
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              style={{ minWidth: "150px" }}
-            >
-              {categories.map((category) => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-            <select
-              className="search-box"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              style={{ minWidth: "150px" }}
-            >
-              <option value="title">Sort: Title</option>
-              <option value="availability">Sort: Availability</option>
-              <option value="popular">Sort: Popular</option>
-            </select>
-          </div>
+          <input
+            className="search-box"
+            placeholder="🔍 Search books..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
-
-        {user?.role === "librarian" && (
-          <div className="dashboard-stats" style={{ marginBottom: "28px" }}>
-            <div className="stat-card"><div className="stat-icon">📚</div><div><span>Titles</span><strong>{books.length}</strong></div></div>
-            <div className="stat-card"><div className="stat-icon">📦</div><div><span>Total Copies</span><strong>{totalCopies}</strong></div></div>
-            <div className="stat-card"><div className="stat-icon">✅</div><div><span>Available</span><strong>{availableCopies}</strong></div></div>
-            <div className="stat-card"><div className="stat-icon">🔥</div><div><span>Borrowed Records</span><strong>{transactions.length}</strong></div></div>
-          </div>
-        )}
-
-        {popularBooks.length > 0 && popularBooks.some((book) => book.borrowCount > 0) && (
-          <div className="dashboard-panel" style={{ marginBottom: "28px" }}>
-            <div className="dashboard-panel-header">
-              <div><p className="section-label">TRENDING NOW</p><h2>Popular Reads</h2></div>
-              <span style={{ opacity: 0.7 }}>Based on borrowing activity</span>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px" }}>
-              {popularBooks.filter((book) => book.borrowCount > 0).map((book, index) => (
-                <div key={book.bookId} style={{ padding: "18px", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}><span className="book-category">#{index + 1} {book.category}</span><strong>🔥 {book.borrowCount}</strong></div>
-                  <h3 style={{ margin: "12px 0 6px" }}>{book.title}</h3>
-                  <p style={{ margin: 0, opacity: 0.7 }}>{book.author}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         <div className="books-grid">
           {filteredBooks.length === 0 ? (
@@ -811,12 +387,7 @@ function CategoryBooks({ theme, setTheme }) {
 
   async function issueBook(book) {
     if (!user) {
-      notify("Please sign in first.", "error");
-      return;
-    }
-
-    if (await hasActiveIssue(user, book.bookId)) {
-      notify("You already have this book issued. Return it before issuing it again.", "error");
+      alert("Please sign in first.");
       return;
     }
 
@@ -838,17 +409,17 @@ function CategoryBooks({ theme, setTheme }) {
       const data = await response.json();
 
       if (!response.ok) {
-        notify(data.message);
+        alert(data.message);
         return;
       }
 
-      notify("Book issued successfully! 📚");
+      alert("Book issued successfully! 📚");
 
       const updated = await fetch(`${API}/books`);
 
       setBooks(await updated.json());
     } catch (error) {
-      notify("Unable to issue book.");
+      alert("Unable to issue book.");
     }
   }
 
@@ -917,8 +488,8 @@ function MyLibrary({ theme, setTheme }) {
 
       const activeTransactions = data.filter(
         (transaction) =>
-          transaction.status === "Issued" &&
-          (user.role === "librarian" || transaction.studentId === user.studentId)
+          transaction.studentId === user.studentId &&
+          transaction.status === "Issued"
       );
 
       const booksResponse = await fetch(`${API}/books`);
@@ -967,7 +538,7 @@ function MyLibrary({ theme, setTheme }) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            studentId: transaction.studentId,
+            studentId: user.studentId,
           }),
         }
       );
@@ -975,16 +546,16 @@ function MyLibrary({ theme, setTheme }) {
       const data = await response.json();
 
       if (!response.ok) {
-        notify(data.message || "Unable to return book.");
+        alert(data.message || "Unable to return book.");
         return;
       }
 
-      notify("Book returned successfully! 🔄");
+      alert("Book returned successfully! 🔄");
       setSelectedBook(null);
       loadTransactions();
     } catch (error) {
       console.error(error);
-      notify("Unable to return book.");
+      alert("Unable to return book.");
     }
   }
 
@@ -1032,22 +603,22 @@ function MyLibrary({ theme, setTheme }) {
 
         <div className="immersive-library-overlay">
           <div className="immersive-library-heading">
-            <p className="hero-small">{user.role === "librarian" ? "LIBRARY COLLECTION" : "YOUR COLLECTION"}</p>
+            <p className="hero-small">YOUR COLLECTION</p>
             <h1>
-              {user.role === "librarian" ? "Issued" : "My"}
+              My
               <br />
-              <span>{user.role === "librarian" ? "Books" : "Library"}</span>
+              <span>Library</span>
             </h1>
             <p>
-              {user.role === "librarian"
-                ? "Explore every book currently issued across the library."
-                : "A personal space for the books currently in your collection."}
+              A personal space for the books
+              <br />
+              currently in your collection.
             </p>
           </div>
 
           <div className="immersive-library-list">
             <div className="immersive-library-list-header">
-              <span>{user.role === "librarian" ? "CURRENTLY ISSUED" : "CURRENTLY BORROWED"}</span>
+              <span>CURRENTLY BORROWED</span>
               <strong>{transactions.length}</strong>
             </div>
 
@@ -1071,13 +642,7 @@ function MyLibrary({ theme, setTheme }) {
                   </span>
                   <span className="immersive-book-details">
                     <strong>{transaction.title}</strong>
-                    <small>
-                      {user.role === "librarian"
-                        ? `${transaction.studentName || "Student"} • ${transaction.studentId || "—"}`
-                        : transaction.author}
-                      {" · "}
-                      {transaction.status === "Issued" ? getDueStatus(transaction) : "Returned"}
-                    </small>
+                    <small>{transaction.author}</small>
                   </span>
                   <span className="immersive-book-arrow">↗</span>
                 </button>
@@ -1096,16 +661,12 @@ function MyLibrary({ theme, setTheme }) {
               <div className="immersive-return-meta">
                 <div>
                   <span>ISSUED TO</span>
-                  <strong>{selectedBook.studentName || selectedBook.studentId || user.studentId}</strong>
+                  <strong>{user.studentId}</strong>
                 </div>
                 <div>
                   <span>STATUS</span>
-                  <strong className={getOverdueDays(selectedBook) > 0 ? "overdue-text" : ""}>{getDueStatus(selectedBook)}</strong>
+                  <strong>Currently Issued</strong>
                 </div>
-              </div>
-              <div className="immersive-due-meta">
-                <span>DUE DATE</span>
-                <strong>{getDueDate(selectedBook)?.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) || "—"}</strong>
               </div>
               <button className="return-btn" onClick={() => returnBook(selectedBook)}>
                 Return Book
@@ -1132,7 +693,7 @@ function Login() {
 
     if (role === "librarian") {
       if (!username.trim() || !password.trim()) {
-        notify("Please enter librarian username and password.");
+        alert("Please enter librarian username and password.");
         return;
       }
 
@@ -1140,7 +701,7 @@ function Login() {
         username.trim() !== "libraria123" ||
         password !== "libraria123"
       ) {
-        notify("Invalid librarian credentials.");
+        alert("Invalid librarian credentials.");
         return;
       }
 
@@ -1155,13 +716,13 @@ function Login() {
         JSON.stringify(user)
       );
 
-      notify("Welcome, Librarian! 📚");
+      alert("Welcome, Librarian! 📚");
       navigate("/dashboard");
       return;
     }
 
     if (!name.trim() || !studentId.trim()) {
-      notify("Please enter your name and student ID.");
+      alert("Please enter your name and student ID.");
       return;
     }
 
@@ -1176,7 +737,7 @@ function Login() {
       JSON.stringify(user)
     );
 
-    notify(`Welcome to Libraria, ${user.name}! 📚`);
+    alert(`Welcome to Libraria, ${user.name}! 📚`);
     navigate("/library");
   }
 
@@ -1228,7 +789,7 @@ function Login() {
 
               <input
                 type="text"
-                placeholder="Username: libraria123"
+                placeholder="Enter librarian username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
@@ -1237,7 +798,7 @@ function Login() {
 
               <input
                 type="password"
-                placeholder="Password: libraria123"
+                placeholder="Enter librarian password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -1550,22 +1111,17 @@ function ScanQR({ theme, setTheme }) {
 
   async function issueScannedBook() {
     if (!user) {
-      notify("Please sign in first.");
+      alert("Please sign in first.");
       return;
     }
 
     if (!book) {
-      notify("Please scan a book first.", "error");
+      alert("Please scan a book first.");
       return;
     }
 
     if (book.availableCopies <= 0) {
-      notify("This book is currently unavailable.", "error");
-      return;
-    }
-
-    if (await hasActiveIssue(user, book.bookId)) {
-      notify("You already have this book issued. Return it before issuing it again.", "error");
+      alert("This book is currently unavailable.");
       return;
     }
 
@@ -1589,16 +1145,16 @@ function ScanQR({ theme, setTheme }) {
       const data = await response.json();
 
       if (!response.ok) {
-        notify(data.message);
+        alert(data.message);
         return;
       }
 
-      notify("Book issued successfully! 📚");
+      alert("Book issued successfully! 📚");
 
       setBook(null);
       setManualBookId("");
     } catch (error) {
-      notify("Unable to issue book.");
+      alert("Unable to issue book.");
     } finally {
       setLoading(false);
     }
@@ -1606,12 +1162,12 @@ function ScanQR({ theme, setTheme }) {
 
   async function returnScannedBook() {
     if (!user) {
-      notify("Please sign in first.");
+      alert("Please sign in first.");
       return;
     }
 
     if (!book) {
-      notify("Please scan a book first.");
+      alert("Please scan a book first.");
       return;
     }
 
@@ -1634,16 +1190,16 @@ function ScanQR({ theme, setTheme }) {
       const data = await response.json();
 
       if (!response.ok) {
-        notify(data.message);
+        alert(data.message);
         return;
       }
 
-      notify("Book returned successfully! 🔄");
+      alert("Book returned successfully! 🔄");
 
       setBook(null);
       setManualBookId("");
     } catch (error) {
-      notify("Unable to return book.");
+      alert("Unable to return book.");
     } finally {
       setLoading(false);
     }
@@ -1887,26 +1443,6 @@ function ManageBooks({ theme, setTheme }) {
     loadBooks();
   }, []);
 
-  const librarian = JSON.parse(localStorage.getItem("librariaUser"));
-
-  if (librarian?.role !== "librarian") {
-    return (
-      <>
-        <Navbar theme={theme} setTheme={setTheme} />
-        <main className="content">
-          <div className="empty-box">
-            <div className="scan-empty-icon">🔒</div>
-            <h2>Librarian Access Only</h2>
-            <p>Book management is restricted to the librarian account.</p>
-            <Link to="/dashboard" className="primary-btn">Back to Dashboard</Link>
-          </div>
-        </main>
-      </>
-    );
-  }
-
-
-
   function handleChange(e) {
     setForm({
       ...form,
@@ -1961,11 +1497,11 @@ function ManageBooks({ theme, setTheme }) {
       const data = await response.json();
 
       if (!response.ok) {
-        notify(data.message);
+        alert(data.message);
         return;
       }
 
-      notify("Book added successfully! 📚");
+      alert("Book added successfully! 📚");
 
       setForm({
         bookId: "",
@@ -1977,7 +1513,7 @@ function ManageBooks({ theme, setTheme }) {
 
       loadBooks();
     } catch (error) {
-      notify("Unable to add book.");
+      alert("Unable to add book.");
     }
   }
 
@@ -2004,16 +1540,16 @@ function ManageBooks({ theme, setTheme }) {
       const data = await response.json();
 
       if (!response.ok) {
-        notify(data.message);
+        alert(data.message);
         return;
       }
 
-      notify("Book updated successfully! ✏️");
+      alert("Book updated successfully! ✏️");
 
       cancelEdit();
       loadBooks();
     } catch (error) {
-      notify("Unable to update book.");
+      alert("Unable to update book.");
     }
   }
 
@@ -2035,11 +1571,11 @@ function ManageBooks({ theme, setTheme }) {
       const data = await response.json();
 
       if (!response.ok) {
-        notify(data.message);
+        alert(data.message);
         return;
       }
 
-      notify("Book deleted successfully.");
+      alert("Book deleted successfully.");
 
       if (editingBookId === bookId) {
         cancelEdit();
@@ -2054,7 +1590,7 @@ function ManageBooks({ theme, setTheme }) {
 
       loadBooks();
     } catch (error) {
-      notify("Unable to delete book.");
+      alert("Unable to delete book.");
     }
   }
 
@@ -2114,7 +1650,7 @@ function ManageBooks({ theme, setTheme }) {
         canvas.toBlob((blob) => {
           if (!blob) {
             setDownloadingQR(false);
-            notify("Unable to create QR image.");
+            alert("Unable to create QR image.");
             return;
           }
 
@@ -2132,7 +1668,7 @@ function ManageBooks({ theme, setTheme }) {
 
           setDownloadingQR(false);
 
-          notify(
+          alert(
             `${selectedQRBook.bookId}-QR.png has been downloaded.`
           );
         }, "image/png");
@@ -2141,14 +1677,14 @@ function ManageBooks({ theme, setTheme }) {
       image.onerror = () => {
         URL.revokeObjectURL(svgUrl);
         setDownloadingQR(false);
-        notify("Unable to generate QR image.");
+        alert("Unable to generate QR image.");
       };
 
       image.src = svgUrl;
     } catch (error) {
       console.error(error);
       setDownloadingQR(false);
-      notify("Unable to download QR code.");
+      alert("Unable to download QR code.");
     }
   }
 
@@ -2436,7 +1972,7 @@ function Dashboard({ theme, setTheme }) {
       }
     } catch (error) {
       console.error(error);
-      notify("Unable to load dashboard data.");
+      alert("Unable to load dashboard data.");
     } finally {
       setLoading(false);
     }
@@ -2503,30 +2039,6 @@ function Dashboard({ theme, setTheme }) {
   const currentlyIssued = transactions.filter(
     (transaction) => transaction.status === "Issued"
   ).length;
-
-  const returnedTransactions = transactions.filter(
-    (transaction) => transaction.status === "Returned"
-  ).length;
-
-  const booksBorrowed = new Set(
-    transactions.map((transaction) => transaction.bookId)
-  ).size;
-
-  const overdueTransactions = transactions.filter(
-    (transaction) => getOverdueDays(transaction) > 0
-  ).length;
-
-  const dueSoonTransactions = transactions.filter((transaction) => {
-    if (transaction.status !== "Issued") return false;
-    const overdueDays = getOverdueDays(transaction);
-    const dueDate = getDueDate(transaction);
-    if (!dueDate || overdueDays > 0) return false;
-    const today = new Date();
-    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const dueStart = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-    const daysLeft = Math.ceil((dueStart - todayStart) / 86400000);
-    return daysLeft <= 3;
-  }).length;
 
   const filteredTransactions =
     transactions.filter((transaction) => {
@@ -2595,7 +2107,7 @@ function Dashboard({ theme, setTheme }) {
 
   function downloadReport() {
     if (filteredTransactions.length === 0) {
-      notify(
+      alert(
         "There are no transactions to download."
       );
       return;
@@ -2608,10 +2120,8 @@ function Dashboard({ theme, setTheme }) {
       "Student ID",
       "Student Name",
       "Issue Date",
-      "Due Date",
       "Return Date",
       "Status",
-      "Days Overdue",
     ];
 
     const rows = filteredTransactions.map(
@@ -2626,16 +2136,12 @@ function Dashboard({ theme, setTheme }) {
               transaction.issueDate
             ).toLocaleString("en-IN")
           : "",
-        getDueDate(transaction)
-          ? getDueDate(transaction).toLocaleDateString("en-IN")
-          : "",
         transaction.returnDate
           ? new Date(
               transaction.returnDate
             ).toLocaleString("en-IN")
           : "",
         transaction.status || "",
-        getOverdueDays(transaction),
       ]
     );
 
@@ -2690,47 +2196,6 @@ function Dashboard({ theme, setTheme }) {
     setToDate("");
   }
 
-  const categoryStats = books.reduce((stats, book) => {
-    const key = book.category || "Other";
-    stats[key] = (stats[key] || 0) + 1;
-    return stats;
-  }, {});
-
-  const popularBooks = books
-    .map((book) => ({
-      ...book,
-      borrowCount: transactions.filter((item) => item.bookId === book.bookId).length,
-    }))
-    .sort((a, b) => b.borrowCount - a.borrowCount)
-    .slice(0, 5);
-
-  const recentTransactions = (() => {
-    const getActivityTime = (transaction) => {
-      const issueTime = transaction.issueDate ? new Date(transaction.issueDate).getTime() : 0;
-      const returnTime = transaction.returnDate ? new Date(transaction.returnDate).getTime() : 0;
-      return Math.max(issueTime, returnTime);
-    };
-
-    const sorted = [...transactions].sort(
-      (a, b) => getActivityTime(b) - getActivityTime(a)
-    );
-
-    const seen = new Set();
-
-    return sorted.filter((transaction) => {
-      const key =
-        user?.role === "librarian"
-          ? `${transaction.bookId}-${transaction.studentId}`
-          : transaction.bookId;
-
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    }).slice(0, 5);
-  })();
-
-  const availabilityPercent = totalCopies > 0 ? Math.round((availableCopies / totalCopies) * 100) : 0;
-
   return (
     <>
       <Navbar
@@ -2738,82 +2203,8 @@ function Dashboard({ theme, setTheme }) {
         setTheme={setTheme}
       />
 
-      <main className="content dashboard-page" style={{ position: "relative", perspective: "1400px", overflow: "hidden" }}>
-        <style>{`
-          .libraria-dashboard-glow {
-            position: absolute;
-            width: 420px;
-            height: 420px;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.16;
-            pointer-events: none;
-            animation: librariaFloat 9s ease-in-out infinite;
-          }
-          .libraria-dashboard-glow.one { top: -180px; right: -100px; background: #7c5cff; }
-          .libraria-dashboard-glow.two { top: 520px; left: -220px; background: #d46b9d; animation-delay: -4s; }
-          .libraria-dashboard-hero {
-            position: relative;
-            overflow: hidden;
-            transform: translateZ(0);
-            border: 1px solid rgba(255,255,255,0.12);
-            box-shadow: 0 30px 80px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.08);
-            background: linear-gradient(135deg, rgba(124,92,255,0.16), rgba(255,255,255,0.035) 48%, rgba(212,107,157,0.09));
-          }
-          .libraria-dashboard-hero::before {
-            content: "";
-            position: absolute;
-            width: 260px;
-            height: 260px;
-            right: -80px;
-            top: -120px;
-            border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.12);
-            box-shadow: 0 0 70px rgba(124,92,255,0.18);
-          }
-          .libraria-3d-stat {
-            transform: perspective(900px) rotateX(1deg) translateZ(0);
-            transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
-            box-shadow: 0 18px 35px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.07);
-          }
-          .libraria-3d-stat:hover {
-            transform: perspective(900px) rotateX(0deg) rotateY(-2deg) translateY(-7px) translateZ(16px);
-            box-shadow: 0 28px 55px rgba(0,0,0,0.3), 0 0 28px rgba(124,92,255,0.12), inset 0 1px 0 rgba(255,255,255,0.1);
-            border-color: rgba(124,92,255,0.38);
-          }
-          .libraria-3d-panel {
-            transform: translateZ(0);
-            transition: transform 260ms ease, box-shadow 260ms ease;
-            box-shadow: 0 20px 55px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.055);
-          }
-          .libraria-3d-panel:hover {
-            transform: translateY(-3px) rotateX(0.4deg);
-            box-shadow: 0 28px 65px rgba(0,0,0,0.24), 0 0 35px rgba(124,92,255,0.08);
-          }
-          .libraria-orbit {
-            position: absolute;
-            width: 180px;
-            height: 180px;
-            right: 7%;
-            top: 22%;
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 50%;
-            transform: rotateX(68deg) rotateZ(18deg);
-            pointer-events: none;
-            opacity: 0.7;
-          }
-          @keyframes librariaFloat {
-            0%, 100% { transform: translate3d(0,0,0) scale(1); }
-            50% { transform: translate3d(25px,-22px,0) scale(1.08); }
-          }
-          @media (max-width: 800px) {
-            .libraria-orbit { display: none; }
-          }
-        `}</style>
-        <div className="libraria-dashboard-glow one" />
-        <div className="libraria-dashboard-glow two" />
-        <div className="libraria-orbit" />
-        <div className="page-heading dashboard-heading libraria-dashboard-hero" style={{ padding: "28px 30px", borderRadius: "24px", marginBottom: "26px" }}>
+      <main className="content dashboard-page">
+        <div className="page-heading dashboard-heading">
           <div>
             <p className="section-label">
               {user?.role === "librarian"
@@ -2852,156 +2243,70 @@ function Dashboard({ theme, setTheme }) {
         </div>
 
         <div className="dashboard-stats">
-          {user?.role === "librarian" ? (
-            <>
-              <div className="stat-card libraria-3d-stat">
-                <div className="stat-icon">📚</div>
-                <div>
-                  <span>Total Books</span>
-                  <strong>{totalBooks}</strong>
-                </div>
-              </div>
+          <div className="stat-card">
+            <div className="stat-icon">
+              📚
+            </div>
 
-              <div className="stat-card libraria-3d-stat">
-                <div className="stat-icon">📦</div>
-                <div>
-                  <span>Total Copies</span>
-                  <strong>{totalCopies}</strong>
-                </div>
-              </div>
-
-              <div className="stat-card libraria-3d-stat">
-                <div className="stat-icon">✅</div>
-                <div>
-                  <span>Available Copies</span>
-                  <strong>{availableCopies}</strong>
-                </div>
-              </div>
-
-              <div className="stat-card libraria-3d-stat">
-                <div className="stat-icon">📕</div>
-                <div>
-                  <span>Currently Issued</span>
-                  <strong>{issuedCopies}</strong>
-                </div>
-              </div>
-
-              <div className="stat-card libraria-3d-stat">
-                <div className="stat-icon">🔄</div>
-                <div>
-                  <span>Total Transactions</span>
-                  <strong>{totalTransactions}</strong>
-                </div>
-              </div>
-
-              <div className="stat-card libraria-3d-stat">
-                <div className="stat-icon">⏰</div>
-                <div>
-                  <span>Overdue Books</span>
-                  <strong>{overdueTransactions}</strong>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="stat-card libraria-3d-stat">
-                <div className="stat-icon">📕</div>
-                <div>
-                  <span>My Books Issued</span>
-                  <strong>{currentlyIssued}</strong>
-                </div>
-              </div>
-
-              <div className="stat-card libraria-3d-stat">
-                <div className="stat-icon">🔄</div>
-                <div>
-                  <span>My Transactions</span>
-                  <strong>{totalTransactions}</strong>
-                </div>
-              </div>
-
-              <div className="stat-card libraria-3d-stat">
-                <div className="stat-icon">📚</div>
-                <div>
-                  <span>My Books Borrowed</span>
-                  <strong>{booksBorrowed}</strong>
-                </div>
-              </div>
-
-              <div className="stat-card libraria-3d-stat">
-                <div className="stat-icon">↩️</div>
-                <div>
-                  <span>My Books Returned</span>
-                  <strong>{returnedTransactions}</strong>
-                </div>
-              </div>
-
-              <div className="stat-card libraria-3d-stat">
-                <div className="stat-icon">⏰</div>
-                <div>
-                  <span>Due Soon</span>
-                  <strong>{dueSoonTransactions}</strong>
-                </div>
-              </div>
-            </>
-          )}
-
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.3fr) minmax(280px, 0.7fr)", gap: "20px", marginBottom: "24px" }}>
-          <div className="dashboard-panel libraria-3d-panel">
-            <div className="dashboard-panel-header"><div><p className="section-label">ANALYTICS</p><h2>{user?.role === "librarian" ? "Library Insights" : "Your Reading Insights"}</h2></div></div>
-            <div style={{ display: "grid", gap: "18px" }}>
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}><span>Collection availability</span><strong>{availabilityPercent}%</strong></div>
-                <div style={{ height: "10px", borderRadius: "999px", background: "rgba(255,255,255,0.08)", overflow: "hidden" }}><div style={{ width: `${availabilityPercent}%`, height: "100%", background: "var(--accent, #c78a52)", borderRadius: "999px" }} /></div>
-              </div>
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}><span>Books by category</span><span style={{ opacity: 0.65 }}>{Object.keys(categoryStats).length} categories</span></div>
-                <div style={{ display: "grid", gap: "9px" }}>
-                  {Object.entries(categoryStats).map(([category, count]) => {
-                    const width = totalBooks ? Math.max(8, Math.round((count / totalBooks) * 100)) : 0;
-                    return <div key={category}><div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", marginBottom: "4px" }}><span>{category}</span><strong>{count}</strong></div><div style={{ height: "6px", borderRadius: "999px", background: "rgba(255,255,255,0.06)" }}><div style={{ width: `${width}%`, height: "100%", borderRadius: "999px", background: "var(--accent, #c78a52)" }} /></div></div>;
-                  })}
-                </div>
-              </div>
+            <div>
+              <span>Total Books</span>
+              <strong>{totalBooks}</strong>
             </div>
           </div>
 
-          <div className="dashboard-panel libraria-3d-panel">
-            <div className="dashboard-panel-header"><div><p className="section-label">LOAN HEALTH</p><h2>Due Date Monitor</h2></div></div>
-            <div className="loan-health-grid">
-              <div className="loan-health-card">
-                <span>Currently Issued</span>
-                <strong>{currentlyIssued}</strong>
-                <small>Active loans</small>
-              </div>
-              <div className="loan-health-card warning">
-                <span>Due Soon</span>
-                <strong>{dueSoonTransactions}</strong>
-                <small>Next 3 days</small>
-              </div>
-              <div className="loan-health-card danger">
-                <span>Overdue</span>
-                <strong>{overdueTransactions}</strong>
-                <small>Needs attention</small>
-              </div>
+          <div className="stat-card">
+            <div className="stat-icon">
+              📦
             </div>
-            <div className="loan-health-message">
-              {overdueTransactions > 0
-                ? "⚠️ Some books need to be returned."
-                : "✓ No overdue books right now."}
+
+            <div>
+              <span>Total Copies</span>
+              <strong>{totalCopies}</strong>
             </div>
           </div>
 
-          <div className="dashboard-panel libraria-3d-panel">
-            <div className="dashboard-panel-header"><div><p className="section-label">TOP PICKS</p><h2>Most Borrowed</h2></div></div>
-            <div style={{ display: "grid", gap: "12px" }}>
-              {popularBooks.length === 0 ? <p style={{ opacity: 0.65 }}>No borrowing data yet.</p> : popularBooks.map((book, index) => (
-                <div key={book.bookId} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                  <strong style={{ width: "28px", opacity: 0.6 }}>0{index + 1}</strong><div style={{ flex: 1, minWidth: 0 }}><strong style={{ display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{book.title}</strong><span style={{ fontSize: "0.82rem", opacity: 0.6 }}>{book.bookId}</span></div><span className="status-badge issued">{book.borrowCount}</span>
-                </div>
-              ))}
+          <div className="stat-card">
+            <div className="stat-icon">
+              ✅
+            </div>
+
+            <div>
+              <span>Available Copies</span>
+              <strong>{availableCopies}</strong>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-icon">
+              📕
+            </div>
+
+            <div>
+              <span>
+                {user?.role === "librarian"
+                  ? "Currently Issued"
+                  : "My Books Issued"}
+              </span>
+              <strong>
+                {user?.role === "librarian"
+                  ? issuedCopies
+                  : currentlyIssued}
+              </strong>
+            </div>
+          </div>
+
+          <div className="stat-card">
+            <div className="stat-icon">
+              🔄
+            </div>
+
+            <div>
+              <span>
+                {user?.role === "librarian"
+                  ? "Total Transactions"
+                  : "My Transactions"}
+              </span>
+              <strong>{totalTransactions}</strong>
             </div>
           </div>
         </div>
@@ -3126,16 +2431,13 @@ function Dashboard({ theme, setTheme }) {
               <table className="transaction-table">
                 <thead>
                   <tr>
-                    {user?.role === "librarian" && <th>Transaction ID</th>}
                     <th>Book</th>
                     <th>Book ID</th>
                     <th>Student</th>
                     <th>Student ID</th>
                     <th>Issue Date</th>
-                    <th>Due Date</th>
                     <th>Return Date</th>
                     <th>Status</th>
-                    <th>Loan Health</th>
                   </tr>
                 </thead>
 
@@ -3143,9 +2445,6 @@ function Dashboard({ theme, setTheme }) {
                   {filteredTransactions.map(
                     (transaction) => (
                       <tr key={transaction._id}>
-                        {user?.role === "librarian" && (
-                          <td><span className="table-id">{transaction._id || "—"}</span></td>
-                        )}
                         <td>
                           <strong>
                             {transaction.title ||
@@ -3176,10 +2475,6 @@ function Dashboard({ theme, setTheme }) {
                         </td>
 
                         <td>
-                          {formatDate(getDueDate(transaction))}
-                        </td>
-
-                        <td>
                           {formatDate(
                             transaction.returnDate
                           )}
@@ -3197,18 +2492,6 @@ function Dashboard({ theme, setTheme }) {
                             {transaction.status}
                           </span>
                         </td>
-
-                        <td>
-                          <span className={
-                            getOverdueDays(transaction) > 0
-                              ? "loan-badge overdue"
-                              : transaction.status === "Issued" && getDueStatus(transaction) !== "On track"
-                                ? "loan-badge due-soon"
-                                : "loan-badge on-track"
-                          }>
-                            {transaction.status === "Returned" ? "Completed" : getDueStatus(transaction)}
-                          </span>
-                        </td>
                       </tr>
                     )
                   )}
@@ -3219,132 +2502,6 @@ function Dashboard({ theme, setTheme }) {
         </div>
       </main>
     </>
-  );
-}
-
-
-function AIAssistant() {
-  const [open, setOpen] = useState(false);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      text: "Hi! I’m Libraria AI. Ask me to recommend books, find titles by topic, explain what is available, or help you understand your library activity.",
-    },
-  ]);
-
-  async function ask(question = input) {
-    const text = question.trim();
-    if (!text || loading) return;
-
-    setMessages((current) => [...current, { role: "user", text }]);
-    setInput("");
-    setLoading(true);
-
-    try {
-      const response = await fetch(`${API}/ai/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: text,
-          history: messages.slice(-8).map((item) => ({
-            role: item.role,
-            text: item.text,
-          })),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "AI request failed");
-      }
-
-      setMessages((current) => [
-        ...current,
-        { role: "assistant", text: data.reply || "I could not generate a response." },
-      ]);
-    } catch (error) {
-      setMessages((current) => [
-        ...current,
-        {
-          role: "assistant",
-          text: "Libraria AI is not connected yet. Add GEMINI_API_KEY to the backend environment and restart the server.",
-        },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <>
-      {open && (
-        <div className="ai-panel">
-          <div className="ai-panel-header">
-            <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "flex-start" }}>
-              <div>
-                <p className="section-label" style={{ margin: 0 }}>LIBRARIA AI</p>
-                <h3>Lira</h3>
-                <span style={{ opacity: .65, fontSize: ".85rem" }}>Your intelligent library assistant</span>
-              </div>
-              <button className="ai-close" onClick={() => setOpen(false)}>×</button>
-            </div>
-          </div>
-
-          <div className="ai-messages">
-            {messages.map((message, index) => (
-              <div key={`${message.role}-${index}`} className={`ai-message ${message.role}`}>
-                {message.text}
-              </div>
-            ))}
-            {loading && <div className="ai-message assistant">Thinking… ✦</div>}
-          </div>
-
-          <div className="ai-quick-prompts">
-            <button onClick={() => ask("Recommend a book for me")}>Recommend</button>
-            <button onClick={() => ask("What books are available right now?")}>Available books</button>
-            <button onClick={() => ask("Suggest books about psychology")}>Psychology</button>
-          </div>
-
-          <form className="ai-input" onSubmit={(event) => { event.preventDefault(); ask(); }}>
-            <input
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder="Ask Libraria AI…"
-            />
-            <button type="submit">Send</button>
-          </form>
-        </div>
-      )}
-
-      <button className="ai-launcher" onClick={() => setOpen((value) => !value)} aria-label="Open Libraria AI">
-        {open ? "×" : "✦"}
-      </button>
-    </>
-  );
-}
-
-function ToastHost() {
-  const [toast, setToast] = useState(null);
-
-  useEffect(() => {
-    function handleToast(event) {
-      setToast(event.detail);
-      window.clearTimeout(window.__librariaToastTimer);
-      window.__librariaToastTimer = window.setTimeout(() => setToast(null), 3200);
-    }
-    window.addEventListener("libraria-toast", handleToast);
-    return () => window.removeEventListener("libraria-toast", handleToast);
-  }, []);
-
-  if (!toast) return null;
-
-  return (
-    <div style={{ position: "fixed", right: "24px", bottom: "24px", zIndex: 9999, maxWidth: "380px", padding: "15px 18px", borderRadius: "14px", background: "rgba(25,20,18,0.96)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 18px 50px rgba(0,0,0,0.35)", color: "white", display: "flex", alignItems: "center", gap: "10px" }}>
-      <span>{toast.type === "error" ? "⚠️" : "✓"}</span><span>{toast.message}</span>
-    </div>
   );
 }
 
@@ -3367,11 +2524,7 @@ export default function App() {
   }, [theme]);
 
   return (
-    <>
-      <style>{wowStyles}</style>
-      <ToastHost />
-      <AIAssistant />
-      <Routes>
+    <Routes>
       <Route
         path="/"
         element={
@@ -3456,7 +2609,6 @@ export default function App() {
           />
         }
       />
-      </Routes>
-    </>
+    </Routes>
   );
 }
