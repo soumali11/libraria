@@ -52,7 +52,10 @@ function Navbar({ theme, setTheme }) {
         <Link to="/library">My Library</Link>
         <Link to="/scan">Scan QR</Link>
         <Link to="/manage">Manage Books</Link>
-        <Link to="/dashboard">Dashboard</Link>
+
+        {user?.role === "librarian" && (
+          <Link to="/dashboard">Dashboard</Link>
+        )}
       </div>
 
       <div className="nav-actions">
@@ -679,11 +682,44 @@ function MyLibrary({ theme, setTheme }) {
 function Login() {
   const navigate = useNavigate();
 
+  const [role, setRole] = useState("student");
   const [name, setName] = useState("");
   const [studentId, setStudentId] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
   function login(e) {
     e.preventDefault();
+
+    if (role === "librarian") {
+      if (!username.trim() || !password.trim()) {
+        alert("Please enter librarian username and password.");
+        return;
+      }
+
+      if (
+        username.trim() !== "librarian" ||
+        password !== "libraria123"
+      ) {
+        alert("Invalid librarian credentials.");
+        return;
+      }
+
+      const user = {
+        name: "Librarian",
+        studentId: "LIB001",
+        role: "librarian",
+      };
+
+      localStorage.setItem(
+        "librariaUser",
+        JSON.stringify(user)
+      );
+
+      alert("Welcome, Librarian! 📚");
+      navigate("/dashboard");
+      return;
+    }
 
     if (!name.trim() || !studentId.trim()) {
       alert("Please enter your name and student ID.");
@@ -693,6 +729,7 @@ function Login() {
     const user = {
       name: name.trim(),
       studentId: studentId.trim(),
+      role: "student",
     };
 
     localStorage.setItem(
@@ -701,7 +738,6 @@ function Login() {
     );
 
     alert(`Welcome to Libraria, ${user.name}! 📚`);
-
     navigate("/library");
   }
 
@@ -713,27 +749,61 @@ function Login() {
         <h1>Welcome Back</h1>
 
         <p>
-          Sign in to manage your personal library.
+          Sign in to access Libraria.
         </p>
 
         <form onSubmit={login}>
-          <label>Name</label>
+          <label>Login As</label>
 
-          <input
-            type="text"
-            placeholder="Enter your name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+          >
+            <option value="student">Student</option>
+            <option value="librarian">Librarian</option>
+          </select>
 
-          <label>Student ID</label>
+          {role === "student" ? (
+            <>
+              <label>Name</label>
 
-          <input
-            type="text"
-            placeholder="Enter your student ID"
-            value={studentId}
-            onChange={(e) => setStudentId(e.target.value)}
-          />
+              <input
+                type="text"
+                placeholder="Enter your name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+
+              <label>Student ID</label>
+
+              <input
+                type="text"
+                placeholder="Enter your student ID"
+                value={studentId}
+                onChange={(e) => setStudentId(e.target.value)}
+              />
+            </>
+          ) : (
+            <>
+              <label>Username</label>
+
+              <input
+                type="text"
+                placeholder="Enter librarian username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+
+              <label>Password</label>
+
+              <input
+                type="password"
+                placeholder="Enter librarian password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </>
+          )}
 
           <button
             type="submit"
@@ -1872,6 +1942,7 @@ function Dashboard({ theme, setTheme }) {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [loading, setLoading] = useState(false);
+  const user = JSON.parse(localStorage.getItem("librariaUser"));
 
   async function loadDashboard() {
     setLoading(true);
@@ -1898,8 +1969,42 @@ function Dashboard({ theme, setTheme }) {
   }
 
   useEffect(() => {
-    loadDashboard();
+    if (user?.role === "librarian") {
+      loadDashboard();
+    }
   }, []);
+
+  if (user?.role !== "librarian") {
+    return (
+      <>
+        <Navbar
+          theme={theme}
+          setTheme={setTheme}
+        />
+
+        <main className="content">
+          <div className="empty-box">
+            <div className="scan-empty-icon">
+              🔒
+            </div>
+
+            <h2>Librarian Access Required</h2>
+
+            <p>
+              The Library Dashboard is available only to authorized librarians.
+            </p>
+
+            <Link
+              to="/books"
+              className="primary-btn"
+            >
+              Back to Books
+            </Link>
+          </div>
+        </main>
+      </>
+    );
+  }
 
   const totalBooks = books.length;
 
