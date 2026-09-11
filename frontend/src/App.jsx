@@ -698,7 +698,7 @@ function Login() {
       }
 
       if (
-        username.trim() !== "librarian" ||
+        username.trim() !== "libraria123" ||
         password !== "libraria123"
       ) {
         alert("Invalid librarian credentials.");
