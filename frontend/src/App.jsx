@@ -390,12 +390,14 @@ function Books({ theme, setTheme }) {
           </div>
         </div>
 
-        <div className="dashboard-stats" style={{ marginBottom: "28px" }}>
-          <div className="stat-card"><div className="stat-icon">📚</div><div><span>Titles</span><strong>{books.length}</strong></div></div>
-          <div className="stat-card"><div className="stat-icon">📦</div><div><span>Total Copies</span><strong>{totalCopies}</strong></div></div>
-          <div className="stat-card"><div className="stat-icon">✅</div><div><span>Available</span><strong>{availableCopies}</strong></div></div>
-          <div className="stat-card"><div className="stat-icon">🔥</div><div><span>Borrowed Records</span><strong>{transactions.length}</strong></div></div>
-        </div>
+        {user?.role === "librarian" && (
+          <div className="dashboard-stats" style={{ marginBottom: "28px" }}>
+            <div className="stat-card"><div className="stat-icon">📚</div><div><span>Titles</span><strong>{books.length}</strong></div></div>
+            <div className="stat-card"><div className="stat-icon">📦</div><div><span>Total Copies</span><strong>{totalCopies}</strong></div></div>
+            <div className="stat-card"><div className="stat-icon">✅</div><div><span>Available</span><strong>{availableCopies}</strong></div></div>
+            <div className="stat-card"><div className="stat-icon">🔥</div><div><span>Borrowed Records</span><strong>{transactions.length}</strong></div></div>
+          </div>
+        )}
 
         {popularBooks.length > 0 && popularBooks.some((book) => book.borrowCount > 0) && (
           <div className="dashboard-panel" style={{ marginBottom: "28px" }}>
@@ -2660,17 +2662,6 @@ function Dashboard({ theme, setTheme }) {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-
-        <div className="dashboard-panel" style={{ marginBottom: "24px" }}>
-          <div className="dashboard-panel-header"><div><p className="section-label">RECENT ACTIVITY</p><h2>Latest Transactions</h2></div><span style={{ opacity: 0.65 }}>{recentTransactions.length} recent records</span></div>
-          <div style={{ display: "grid", gap: "10px" }}>
-            {recentTransactions.length === 0 ? <p style={{ opacity: 0.65 }}>No transactions yet.</p> : recentTransactions.map((transaction) => (
-              <div key={transaction._id} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-                <span style={{ fontSize: "1.2rem" }}>{transaction.status === "Issued" ? "📕" : "🔄"}</span><div style={{ flex: 1 }}><strong>{transaction.title || transaction.bookId}</strong><div style={{ fontSize: "0.85rem", opacity: 0.62 }}>{transaction.studentName || transaction.studentId} · {formatDate(transaction.issueDate)}</div></div><span className={transaction.status === "Issued" ? "status-badge issued" : "status-badge returned"}>{transaction.status}</span>
-              </div>
-            ))}
           </div>
         </div>
 
