@@ -6,20 +6,14 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// MongoDB
 const client = new MongoClient(process.env.MONGO_URI);
 
 let db;
 let booksCollection;
 let transactionsCollection;
-
-// ===============================
-// CONNECT TO MONGODB
-// ===============================
 
 async function connectDB() {
     try {
@@ -37,19 +31,11 @@ async function connectDB() {
     }
 }
 
-// ===============================
-// HOME ROUTE
-// ===============================
-
 app.get("/", (req, res) => {
     res.json({
         message: "Library Management System API is running!"
     });
 });
-
-// ===============================
-// GET ALL BOOKS
-// ===============================
 
 app.get("/api/books", async (req, res) => {
     try {
@@ -67,10 +53,6 @@ app.get("/api/books", async (req, res) => {
     }
 });
 
-// ===============================
-// ADD A NEW BOOK
-// ===============================
-
 app.post("/api/books", async (req, res) => {
     try {
         const {
@@ -81,7 +63,6 @@ app.post("/api/books", async (req, res) => {
             totalCopies
         } = req.body;
 
-        // Check required fields
         if (
             !title ||
             !author ||
@@ -94,7 +75,6 @@ app.post("/api/books", async (req, res) => {
             });
         }
 
-        // Convert copies to number
         const copies = Number(totalCopies);
 
         if (copies <= 0) {
@@ -103,7 +83,6 @@ app.post("/api/books", async (req, res) => {
             });
         }
 
-        // Check duplicate Book ID
         const existingBook = await booksCollection.findOne({
             bookId: bookId
         });
@@ -114,7 +93,6 @@ app.post("/api/books", async (req, res) => {
             });
         }
 
-        // Create new book
         const newBook = {
             title: title,
             author: author,
@@ -127,7 +105,6 @@ app.post("/api/books", async (req, res) => {
             createdAt: new Date()
         };
 
-        // Insert into MongoDB
         const result = await booksCollection.insertOne(newBook);
 
         res.status(201).json({
@@ -146,10 +123,6 @@ app.post("/api/books", async (req, res) => {
         });
     }
 });
-
-// ===============================
-// GET ONE BOOK BY BOOK ID
-// ===============================
 
 app.get("/api/books/:bookId", async (req, res) => {
     try {
@@ -176,10 +149,6 @@ app.get("/api/books/:bookId", async (req, res) => {
     }
 });
 
-// ===============================
-// UPDATE A BOOK
-// ===============================
-
 app.put("/api/books/:bookId", async (req, res) => {
     try {
         const { bookId } = req.params;
@@ -191,7 +160,6 @@ app.put("/api/books/:bookId", async (req, res) => {
             totalCopies
         } = req.body;
 
-        // Check whether book exists
         const existingBook = await booksCollection.findOne({
             bookId: bookId
         });
@@ -202,7 +170,6 @@ app.put("/api/books/:bookId", async (req, res) => {
             });
         }
 
-        // Check required fields
         if (
             !title ||
             !author ||
@@ -222,7 +189,6 @@ app.put("/api/books/:bookId", async (req, res) => {
             });
         }
 
-        // Total copies cannot be less than already issued copies
         if (
             newTotalCopies <
             existingBook.issuedCopies
@@ -233,12 +199,10 @@ app.put("/api/books/:bookId", async (req, res) => {
             });
         }
 
-        // Calculate available copies
         const newAvailableCopies =
             newTotalCopies -
             existingBook.issuedCopies;
 
-        // Update book
         await booksCollection.updateOne(
             {
                 bookId: bookId
@@ -259,7 +223,6 @@ app.put("/api/books/:bookId", async (req, res) => {
             }
         );
 
-        // Get updated book
         const updatedBook =
             await booksCollection.findOne({
                 bookId: bookId
@@ -278,9 +241,6 @@ app.put("/api/books/:bookId", async (req, res) => {
         });
     }
 });
-// ===============================
-// ISSUE A BOOK
-// ===============================
 
 app.post("/api/books/:bookId/issue", async (req, res) => {
     try {
@@ -291,33 +251,42 @@ app.post("/api/books/:bookId/issue", async (req, res) => {
             studentName
         } = req.body;
 
-        // Check required student information
         if (!studentId || !studentName) {
             return res.status(400).json({
                 message: "Student ID and student name are required"
             });
         }
 
-        // Find the book
         const book = await booksCollection.findOne({
             bookId: bookId
         });
 
-        // Check whether book exists
         if (!book) {
             return res.status(404).json({
                 message: "Book not found"
             });
         }
 
-        // Check whether a copy is available
+        const existingIssue =
+            await transactionsCollection.findOne({
+                bookId: bookId,
+                studentId: studentId,
+                status: "Issued"
+            });
+
+        if (existingIssue) {
+            return res.status(409).json({
+                message:
+                    "This student already has this book issued. Return it before issuing it again."
+            });
+        }
+
         if (book.availableCopies <= 0) {
             return res.status(400).json({
                 message: "Book is not available"
             });
         }
 
-        // Update book copies
         await booksCollection.updateOne(
             {
                 bookId: bookId
@@ -333,7 +302,6 @@ app.post("/api/books/:bookId/issue", async (req, res) => {
             }
         );
 
-        // Create transaction
         const transaction = {
             bookId: bookId,
             title: book.title,
@@ -344,8 +312,10 @@ app.post("/api/books/:bookId/issue", async (req, res) => {
             status: "Issued"
         };
 
-        // Save transaction
-        const result = await transactionsCollection.insertOne(transaction);
+        const result =
+            await transactionsCollection.insertOne(
+                transaction
+            );
 
         res.status(201).json({
             message: "Book issued successfully",
@@ -363,15 +333,11 @@ app.post("/api/books/:bookId/issue", async (req, res) => {
         });
     }
 });
-// ===============================
-// DELETE A BOOK
-// ===============================
 
 app.delete("/api/books/:bookId", async (req, res) => {
     try {
         const { bookId } = req.params;
 
-        // Check whether book exists
         const existingBook = await booksCollection.findOne({
             bookId: bookId
         });
@@ -382,7 +348,6 @@ app.delete("/api/books/:bookId", async (req, res) => {
             });
         }
 
-        // Don't delete a book that is currently issued
         if (existingBook.issuedCopies > 0) {
             return res.status(400).json({
                 message:
@@ -406,9 +371,6 @@ app.delete("/api/books/:bookId", async (req, res) => {
         });
     }
 });
-// ===============================
-// RETURN A BOOK
-// ===============================
 
 app.post("/api/books/:bookId/return", async (req, res) => {
     try {
@@ -416,40 +378,36 @@ app.post("/api/books/:bookId/return", async (req, res) => {
 
         const { studentId } = req.body;
 
-        // Check required student information
         if (!studentId) {
             return res.status(400).json({
                 message: "Student ID is required"
             });
         }
 
-        // Find the book
         const book = await booksCollection.findOne({
             bookId: bookId
         });
 
-        // Check whether book exists
         if (!book) {
             return res.status(404).json({
                 message: "Book not found"
             });
         }
 
-        // Find the active transaction
-        const transaction = await transactionsCollection.findOne({
-            bookId: bookId,
-            studentId: studentId,
-            status: "Issued"
-        });
+        const transaction =
+            await transactionsCollection.findOne({
+                bookId: bookId,
+                studentId: studentId,
+                status: "Issued"
+            });
 
-        // Check whether this student actually has the book
         if (!transaction) {
             return res.status(404).json({
-                message: "No active issue found for this student"
+                message:
+                    "No active issue found for this student"
             });
         }
 
-        // Update book copies
         await booksCollection.updateOne(
             {
                 bookId: bookId
@@ -466,7 +424,6 @@ app.post("/api/books/:bookId/return", async (req, res) => {
             }
         );
 
-        // Update transaction
         await transactionsCollection.updateOne(
             {
                 _id: transaction._id
@@ -479,12 +436,11 @@ app.post("/api/books/:bookId/return", async (req, res) => {
             }
         );
 
-        // Get updated book
-        const updatedBook = await booksCollection.findOne({
-            bookId: bookId
-        });
+        const updatedBook =
+            await booksCollection.findOne({
+                bookId: bookId
+            });
 
-        // Get updated transaction
         const updatedTransaction =
             await transactionsCollection.findOne({
                 _id: transaction._id
@@ -504,15 +460,13 @@ app.post("/api/books/:bookId/return", async (req, res) => {
         });
     }
 });
-// ===============================
-// GET ALL TRANSACTIONS
-// ===============================
 
 app.get("/api/transactions", async (req, res) => {
     try {
-        const transactions = await transactionsCollection
-            .find()
-            .toArray();
+        const transactions =
+            await transactionsCollection
+                .find()
+                .toArray();
 
         res.json(transactions);
 
@@ -524,9 +478,6 @@ app.get("/api/transactions", async (req, res) => {
         });
     }
 });
-// ===============================
-// START SERVER
-// ===============================
 
 async function startServer() {
     await connectDB();

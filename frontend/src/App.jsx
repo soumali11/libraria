@@ -12,6 +12,32 @@ import "./immersive-library.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
+function notify(message, type = "success") {
+  window.dispatchEvent(
+    new CustomEvent("libraria-toast", {
+      detail: { message, type },
+    })
+  );
+}
+
+async function hasActiveIssue(user, bookId) {
+  if (!user?.studentId) return false;
+
+  try {
+    const response = await fetch(`${API}/transactions`);
+    const data = await response.json();
+    if (!response.ok || !Array.isArray(data)) return false;
+    return data.some(
+      (transaction) =>
+        transaction.studentId === user.studentId &&
+        transaction.bookId === bookId &&
+        transaction.status === "Issued"
+    );
+  } catch (error) {
+    return false;
+  }
+}
+
 const bookImages = {
   B001: alchemistCover,
   B002: atomicHabitsCover,
@@ -51,7 +77,10 @@ function Navbar({ theme, setTheme }) {
         <Link to="/categories">Categories</Link>
         <Link to="/library">My Library</Link>
         <Link to="/scan">Scan QR</Link>
-        <Link to="/manage">Manage Books</Link>
+
+        {user?.role === "librarian" && (
+          <Link to="/manage">Manage Books</Link>
+        )}
 
         {user && (
           <Link to="/dashboard">Dashboard</Link>
@@ -134,64 +163,90 @@ function Home({ theme, setTheme }) {
 
 function BookCard({ book, user, onIssue, onDelete }) {
   const image = getImage(book);
+  const [showDetails, setShowDetails] = useState(false);
 
   return (
-    <div className="book-card">
-      <div className="book-image">
-        {image ? (
-          <img src={image} alt={book.title} />
-        ) : (
-          <div className="book-placeholder">📖</div>
-        )}
-      </div>
-
-      <div className="book-info">
-        <span className="book-category">
-          {book.category}
-        </span>
-
-        <h3>{book.title}</h3>
-
-        <p>by {book.author}</p>
-
-        <div className="book-details">
-          <span>Total: {book.totalCopies}</span>
-
-          <span>
-            Available: {book.availableCopies}
-          </span>
+    <>
+      <div className="book-card">
+        <div className="book-image">
+          {image ? (
+            <img src={image} alt={book.title} />
+          ) : (
+            <div className="book-placeholder">📖</div>
+          )}
         </div>
 
-        {onIssue && (
-          <button
-            className="issue-btn"
-            disabled={!user || book.availableCopies <= 0}
-            onClick={() => onIssue(book)}
-          >
-            {!user
-              ? "Sign In to Issue"
-              : book.availableCopies <= 0
-              ? "Unavailable"
-              : "Issue Book"}
-          </button>
-        )}
+        <div className="book-info">
+          <span className="book-category">{book.category}</span>
+          <h3>{book.title}</h3>
+          <p>by {book.author}</p>
 
-        {onDelete && (
-          <button
-            className="delete-btn"
-            onClick={() => onDelete(book.bookId)}
-          >
-            Delete
-          </button>
-        )}
+          <div className="book-details">
+            <span>Total: {book.totalCopies}</span>
+            <span>Available: {book.availableCopies}</span>
+          </div>
+
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "12px" }}>
+            <button className="secondary-btn" onClick={() => setShowDetails(true)}>View Details</button>
+            {onIssue && (
+              <button
+                className="issue-btn"
+                disabled={!user || book.availableCopies <= 0}
+                onClick={() => onIssue(book)}
+              >
+                {!user ? "Sign In to Issue" : book.availableCopies <= 0 ? "Unavailable" : "Issue Book"}
+              </button>
+            )}
+            {onDelete && (
+              <button className="delete-btn" onClick={() => onDelete(book.bookId)}>Delete</button>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+
+      {showDetails && (
+        <div className="qr-modal-overlay" onClick={() => setShowDetails(false)}>
+          <div className="qr-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "560px" }}>
+            <button className="qr-modal-close" onClick={() => setShowDetails(false)}>×</button>
+            <p className="section-label">BOOK DETAILS</p>
+            <div style={{ display: "grid", gridTemplateColumns: "140px 1fr", gap: "22px", alignItems: "start" }}>
+              <div className="book-image" style={{ minHeight: "190px" }}>
+                {image ? <img src={image} alt={book.title} /> : <div className="book-placeholder">📖</div>}
+              </div>
+              <div>
+                <span className="book-category">{book.category}</span>
+                <h2 style={{ marginBottom: "6px" }}>{book.title}</h2>
+                <p>{book.author}</p>
+                <div style={{ display: "grid", gap: "8px", marginTop: "18px" }}>
+                  <div><strong>Book ID:</strong> {book.bookId}</div>
+                  <div><strong>Total Copies:</strong> {book.totalCopies}</div>
+                  <div><strong>Available:</strong> {book.availableCopies}</div>
+                  <div><strong>Issued:</strong> {Number(book.issuedCopies || 0)}</div>
+                  <div><strong>Status:</strong> {book.availableCopies > 0 ? "Available" : "Unavailable"}</div>
+                </div>
+              </div>
+            </div>
+            <div className="qr-modal-actions" style={{ marginTop: "22px" }}>
+              {onIssue && (
+                <button className="primary-btn" disabled={!user || book.availableCopies <= 0} onClick={() => { setShowDetails(false); onIssue(book); }}>
+                  {!user ? "Sign In to Issue" : book.availableCopies <= 0 ? "Unavailable" : "Issue Book"}
+                </button>
+              )}
+              <button className="secondary-btn" onClick={() => setShowDetails(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
 function Books({ theme, setTheme }) {
   const [books, setBooks] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [sortBy, setSortBy] = useState("title");
 
   const user =
     JSON.parse(localStorage.getItem("librariaUser")) || null;
@@ -208,11 +263,20 @@ function Books({ theme, setTheme }) {
 
   useEffect(() => {
     loadBooks();
+    fetch(`${API}/transactions`)
+      .then((response) => response.json())
+      .then((data) => setTransactions(Array.isArray(data) ? data : []))
+      .catch(() => setTransactions([]));
   }, []);
 
   async function issueBook(book) {
     if (!user) {
-      alert("Please sign in first.");
+      notify("Please sign in first.", "error");
+      return;
+    }
+
+    if (await hasActiveIssue(user, book.bookId)) {
+      notify("You already have this book issued. Return it before issuing it again.", "error");
       return;
     }
 
@@ -234,23 +298,53 @@ function Books({ theme, setTheme }) {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message);
+        notify(data.message);
         return;
       }
 
-      alert("Book issued successfully! 📚");
+      notify("Book issued successfully! 📚");
 
       loadBooks();
     } catch (error) {
-      alert("Unable to issue book.");
+      notify("Unable to issue book.");
     }
   }
 
-  const filteredBooks = books.filter((book) =>
-    `${book.title} ${book.author} ${book.category}`
-      .toLowerCase()
-      .includes(search.toLowerCase())
-  );
+  const categories = [
+    "All",
+    ...Array.from(new Set(books.map((book) => book.category).filter(Boolean))),
+  ];
+
+  const filteredBooks = books
+    .filter((book) => {
+      const matchesSearch = `${book.title} ${book.author} ${book.category}`
+        .toLowerCase()
+        .includes(search.toLowerCase());
+      const matchesCategory = categoryFilter === "All" || book.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      if (sortBy === "availability") {
+        return Number(b.availableCopies || 0) - Number(a.availableCopies || 0);
+      }
+      if (sortBy === "popular") {
+        const aCount = transactions.filter((item) => item.bookId === a.bookId).length;
+        const bCount = transactions.filter((item) => item.bookId === b.bookId).length;
+        return bCount - aCount;
+      }
+      return a.title.localeCompare(b.title);
+    });
+
+  const popularBooks = books
+    .map((book) => ({
+      ...book,
+      borrowCount: transactions.filter((item) => item.bookId === book.bookId).length,
+    }))
+    .sort((a, b) => b.borrowCount - a.borrowCount)
+    .slice(0, 3);
+
+  const totalCopies = books.reduce((sum, book) => sum + Number(book.totalCopies || 0), 0);
+  const availableCopies = books.reduce((sum, book) => sum + Number(book.availableCopies || 0), 0);
 
   return (
     <>
@@ -266,13 +360,60 @@ function Books({ theme, setTheme }) {
             <p>Find your next favourite book.</p>
           </div>
 
-          <input
-            className="search-box"
-            placeholder="🔍 Search books..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <input
+              className="search-box"
+              placeholder="🔍 Search books..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <select
+              className="search-box"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              style={{ minWidth: "150px" }}
+            >
+              {categories.map((category) => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+            <select
+              className="search-box"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              style={{ minWidth: "150px" }}
+            >
+              <option value="title">Sort: Title</option>
+              <option value="availability">Sort: Availability</option>
+              <option value="popular">Sort: Popular</option>
+            </select>
+          </div>
         </div>
+
+        <div className="dashboard-stats" style={{ marginBottom: "28px" }}>
+          <div className="stat-card"><div className="stat-icon">📚</div><div><span>Titles</span><strong>{books.length}</strong></div></div>
+          <div className="stat-card"><div className="stat-icon">📦</div><div><span>Total Copies</span><strong>{totalCopies}</strong></div></div>
+          <div className="stat-card"><div className="stat-icon">✅</div><div><span>Available</span><strong>{availableCopies}</strong></div></div>
+          <div className="stat-card"><div className="stat-icon">🔥</div><div><span>Borrowed Records</span><strong>{transactions.length}</strong></div></div>
+        </div>
+
+        {popularBooks.length > 0 && popularBooks.some((book) => book.borrowCount > 0) && (
+          <div className="dashboard-panel" style={{ marginBottom: "28px" }}>
+            <div className="dashboard-panel-header">
+              <div><p className="section-label">TRENDING NOW</p><h2>Popular Reads</h2></div>
+              <span style={{ opacity: 0.7 }}>Based on borrowing activity</span>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "14px" }}>
+              {popularBooks.filter((book) => book.borrowCount > 0).map((book, index) => (
+                <div key={book.bookId} style={{ padding: "18px", borderRadius: "16px", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "12px" }}><span className="book-category">#{index + 1} {book.category}</span><strong>🔥 {book.borrowCount}</strong></div>
+                  <h3 style={{ margin: "12px 0 6px" }}>{book.title}</h3>
+                  <p style={{ margin: 0, opacity: 0.7 }}>{book.author}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="books-grid">
           {filteredBooks.length === 0 ? (
@@ -387,7 +528,12 @@ function CategoryBooks({ theme, setTheme }) {
 
   async function issueBook(book) {
     if (!user) {
-      alert("Please sign in first.");
+      notify("Please sign in first.", "error");
+      return;
+    }
+
+    if (await hasActiveIssue(user, book.bookId)) {
+      notify("You already have this book issued. Return it before issuing it again.", "error");
       return;
     }
 
@@ -409,17 +555,17 @@ function CategoryBooks({ theme, setTheme }) {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message);
+        notify(data.message);
         return;
       }
 
-      alert("Book issued successfully! 📚");
+      notify("Book issued successfully! 📚");
 
       const updated = await fetch(`${API}/books`);
 
       setBooks(await updated.json());
     } catch (error) {
-      alert("Unable to issue book.");
+      notify("Unable to issue book.");
     }
   }
 
@@ -546,16 +692,16 @@ function MyLibrary({ theme, setTheme }) {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message || "Unable to return book.");
+        notify(data.message || "Unable to return book.");
         return;
       }
 
-      alert("Book returned successfully! 🔄");
+      notify("Book returned successfully! 🔄");
       setSelectedBook(null);
       loadTransactions();
     } catch (error) {
       console.error(error);
-      alert("Unable to return book.");
+      notify("Unable to return book.");
     }
   }
 
@@ -693,7 +839,7 @@ function Login() {
 
     if (role === "librarian") {
       if (!username.trim() || !password.trim()) {
-        alert("Please enter librarian username and password.");
+        notify("Please enter librarian username and password.");
         return;
       }
 
@@ -701,7 +847,7 @@ function Login() {
         username.trim() !== "libraria123" ||
         password !== "libraria123"
       ) {
-        alert("Invalid librarian credentials.");
+        notify("Invalid librarian credentials.");
         return;
       }
 
@@ -716,13 +862,13 @@ function Login() {
         JSON.stringify(user)
       );
 
-      alert("Welcome, Librarian! 📚");
+      notify("Welcome, Librarian! 📚");
       navigate("/dashboard");
       return;
     }
 
     if (!name.trim() || !studentId.trim()) {
-      alert("Please enter your name and student ID.");
+      notify("Please enter your name and student ID.");
       return;
     }
 
@@ -737,7 +883,7 @@ function Login() {
       JSON.stringify(user)
     );
 
-    alert(`Welcome to Libraria, ${user.name}! 📚`);
+    notify(`Welcome to Libraria, ${user.name}! 📚`);
     navigate("/library");
   }
 
@@ -789,7 +935,7 @@ function Login() {
 
               <input
                 type="text"
-                placeholder="Enter librarian username"
+                placeholder="Username: libraria123"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
               />
@@ -798,7 +944,7 @@ function Login() {
 
               <input
                 type="password"
-                placeholder="Enter librarian password"
+                placeholder="Password: libraria123"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -1111,17 +1257,22 @@ function ScanQR({ theme, setTheme }) {
 
   async function issueScannedBook() {
     if (!user) {
-      alert("Please sign in first.");
+      notify("Please sign in first.");
       return;
     }
 
     if (!book) {
-      alert("Please scan a book first.");
+      notify("Please scan a book first.", "error");
       return;
     }
 
     if (book.availableCopies <= 0) {
-      alert("This book is currently unavailable.");
+      notify("This book is currently unavailable.", "error");
+      return;
+    }
+
+    if (await hasActiveIssue(user, book.bookId)) {
+      notify("You already have this book issued. Return it before issuing it again.", "error");
       return;
     }
 
@@ -1145,16 +1296,16 @@ function ScanQR({ theme, setTheme }) {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message);
+        notify(data.message);
         return;
       }
 
-      alert("Book issued successfully! 📚");
+      notify("Book issued successfully! 📚");
 
       setBook(null);
       setManualBookId("");
     } catch (error) {
-      alert("Unable to issue book.");
+      notify("Unable to issue book.");
     } finally {
       setLoading(false);
     }
@@ -1162,12 +1313,12 @@ function ScanQR({ theme, setTheme }) {
 
   async function returnScannedBook() {
     if (!user) {
-      alert("Please sign in first.");
+      notify("Please sign in first.");
       return;
     }
 
     if (!book) {
-      alert("Please scan a book first.");
+      notify("Please scan a book first.");
       return;
     }
 
@@ -1190,16 +1341,16 @@ function ScanQR({ theme, setTheme }) {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message);
+        notify(data.message);
         return;
       }
 
-      alert("Book returned successfully! 🔄");
+      notify("Book returned successfully! 🔄");
 
       setBook(null);
       setManualBookId("");
     } catch (error) {
-      alert("Unable to return book.");
+      notify("Unable to return book.");
     } finally {
       setLoading(false);
     }
@@ -1443,6 +1594,26 @@ function ManageBooks({ theme, setTheme }) {
     loadBooks();
   }, []);
 
+  const librarian = JSON.parse(localStorage.getItem("librariaUser"));
+
+  if (librarian?.role !== "librarian") {
+    return (
+      <>
+        <Navbar theme={theme} setTheme={setTheme} />
+        <main className="content">
+          <div className="empty-box">
+            <div className="scan-empty-icon">🔒</div>
+            <h2>Librarian Access Only</h2>
+            <p>Book management is restricted to the librarian account.</p>
+            <Link to="/dashboard" className="primary-btn">Back to Dashboard</Link>
+          </div>
+        </main>
+      </>
+    );
+  }
+
+
+
   function handleChange(e) {
     setForm({
       ...form,
@@ -1497,11 +1668,11 @@ function ManageBooks({ theme, setTheme }) {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message);
+        notify(data.message);
         return;
       }
 
-      alert("Book added successfully! 📚");
+      notify("Book added successfully! 📚");
 
       setForm({
         bookId: "",
@@ -1513,7 +1684,7 @@ function ManageBooks({ theme, setTheme }) {
 
       loadBooks();
     } catch (error) {
-      alert("Unable to add book.");
+      notify("Unable to add book.");
     }
   }
 
@@ -1540,16 +1711,16 @@ function ManageBooks({ theme, setTheme }) {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message);
+        notify(data.message);
         return;
       }
 
-      alert("Book updated successfully! ✏️");
+      notify("Book updated successfully! ✏️");
 
       cancelEdit();
       loadBooks();
     } catch (error) {
-      alert("Unable to update book.");
+      notify("Unable to update book.");
     }
   }
 
@@ -1571,11 +1742,11 @@ function ManageBooks({ theme, setTheme }) {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message);
+        notify(data.message);
         return;
       }
 
-      alert("Book deleted successfully.");
+      notify("Book deleted successfully.");
 
       if (editingBookId === bookId) {
         cancelEdit();
@@ -1590,7 +1761,7 @@ function ManageBooks({ theme, setTheme }) {
 
       loadBooks();
     } catch (error) {
-      alert("Unable to delete book.");
+      notify("Unable to delete book.");
     }
   }
 
@@ -1650,7 +1821,7 @@ function ManageBooks({ theme, setTheme }) {
         canvas.toBlob((blob) => {
           if (!blob) {
             setDownloadingQR(false);
-            alert("Unable to create QR image.");
+            notify("Unable to create QR image.");
             return;
           }
 
@@ -1668,7 +1839,7 @@ function ManageBooks({ theme, setTheme }) {
 
           setDownloadingQR(false);
 
-          alert(
+          notify(
             `${selectedQRBook.bookId}-QR.png has been downloaded.`
           );
         }, "image/png");
@@ -1677,14 +1848,14 @@ function ManageBooks({ theme, setTheme }) {
       image.onerror = () => {
         URL.revokeObjectURL(svgUrl);
         setDownloadingQR(false);
-        alert("Unable to generate QR image.");
+        notify("Unable to generate QR image.");
       };
 
       image.src = svgUrl;
     } catch (error) {
       console.error(error);
       setDownloadingQR(false);
-      alert("Unable to download QR code.");
+      notify("Unable to download QR code.");
     }
   }
 
@@ -1972,7 +2143,7 @@ function Dashboard({ theme, setTheme }) {
       }
     } catch (error) {
       console.error(error);
-      alert("Unable to load dashboard data.");
+      notify("Unable to load dashboard data.");
     } finally {
       setLoading(false);
     }
@@ -2039,6 +2210,14 @@ function Dashboard({ theme, setTheme }) {
   const currentlyIssued = transactions.filter(
     (transaction) => transaction.status === "Issued"
   ).length;
+
+  const returnedTransactions = transactions.filter(
+    (transaction) => transaction.status === "Returned"
+  ).length;
+
+  const booksBorrowed = new Set(
+    transactions.map((transaction) => transaction.bookId)
+  ).size;
 
   const filteredTransactions =
     transactions.filter((transaction) => {
@@ -2107,7 +2286,7 @@ function Dashboard({ theme, setTheme }) {
 
   function downloadReport() {
     if (filteredTransactions.length === 0) {
-      alert(
+      notify(
         "There are no transactions to download."
       );
       return;
@@ -2195,6 +2374,26 @@ function Dashboard({ theme, setTheme }) {
     setFromDate("");
     setToDate("");
   }
+
+  const categoryStats = books.reduce((stats, book) => {
+    const key = book.category || "Other";
+    stats[key] = (stats[key] || 0) + 1;
+    return stats;
+  }, {});
+
+  const popularBooks = books
+    .map((book) => ({
+      ...book,
+      borrowCount: transactions.filter((item) => item.bookId === book.bookId).length,
+    }))
+    .sort((a, b) => b.borrowCount - a.borrowCount)
+    .slice(0, 5);
+
+  const recentTransactions = [...transactions]
+    .sort((a, b) => new Date(b.issueDate || 0) - new Date(a.issueDate || 0))
+    .slice(0, 5);
+
+  const availabilityPercent = totalCopies > 0 ? Math.round((availableCopies / totalCopies) * 100) : 0;
 
   return (
     <>
@@ -2308,6 +2507,75 @@ function Dashboard({ theme, setTheme }) {
               </span>
               <strong>{totalTransactions}</strong>
             </div>
+          </div>
+
+          {user?.role !== "librarian" && (
+            <>
+              <div className="stat-card">
+                <div className="stat-icon">
+                  📚
+                </div>
+
+                <div>
+                  <span>Books Borrowed</span>
+                  <strong>{booksBorrowed}</strong>
+                </div>
+              </div>
+
+              <div className="stat-card">
+                <div className="stat-icon">
+                  ↩️
+                </div>
+
+                <div>
+                  <span>Books Returned</span>
+                  <strong>{returnedTransactions}</strong>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.3fr) minmax(280px, 0.7fr)", gap: "20px", marginBottom: "24px" }}>
+          <div className="dashboard-panel">
+            <div className="dashboard-panel-header"><div><p className="section-label">ANALYTICS</p><h2>{user?.role === "librarian" ? "Library Insights" : "Your Reading Insights"}</h2></div></div>
+            <div style={{ display: "grid", gap: "18px" }}>
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}><span>Collection availability</span><strong>{availabilityPercent}%</strong></div>
+                <div style={{ height: "10px", borderRadius: "999px", background: "rgba(255,255,255,0.08)", overflow: "hidden" }}><div style={{ width: `${availabilityPercent}%`, height: "100%", background: "var(--accent, #c78a52)", borderRadius: "999px" }} /></div>
+              </div>
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}><span>Books by category</span><span style={{ opacity: 0.65 }}>{Object.keys(categoryStats).length} categories</span></div>
+                <div style={{ display: "grid", gap: "9px" }}>
+                  {Object.entries(categoryStats).map(([category, count]) => {
+                    const width = totalBooks ? Math.max(8, Math.round((count / totalBooks) * 100)) : 0;
+                    return <div key={category}><div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem", marginBottom: "4px" }}><span>{category}</span><strong>{count}</strong></div><div style={{ height: "6px", borderRadius: "999px", background: "rgba(255,255,255,0.06)" }}><div style={{ width: `${width}%`, height: "100%", borderRadius: "999px", background: "var(--accent, #c78a52)" }} /></div></div>;
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="dashboard-panel">
+            <div className="dashboard-panel-header"><div><p className="section-label">TOP PICKS</p><h2>Most Borrowed</h2></div></div>
+            <div style={{ display: "grid", gap: "12px" }}>
+              {popularBooks.length === 0 ? <p style={{ opacity: 0.65 }}>No borrowing data yet.</p> : popularBooks.map((book, index) => (
+                <div key={book.bookId} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  <strong style={{ width: "28px", opacity: 0.6 }}>0{index + 1}</strong><div style={{ flex: 1, minWidth: 0 }}><strong style={{ display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{book.title}</strong><span style={{ fontSize: "0.82rem", opacity: 0.6 }}>{book.bookId}</span></div><span className="status-badge issued">{book.borrowCount}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="dashboard-panel" style={{ marginBottom: "24px" }}>
+          <div className="dashboard-panel-header"><div><p className="section-label">RECENT ACTIVITY</p><h2>Latest Transactions</h2></div><span style={{ opacity: 0.65 }}>{recentTransactions.length} recent records</span></div>
+          <div style={{ display: "grid", gap: "10px" }}>
+            {recentTransactions.length === 0 ? <p style={{ opacity: 0.65 }}>No transactions yet.</p> : recentTransactions.map((transaction) => (
+              <div key={transaction._id} style={{ display: "flex", alignItems: "center", gap: "14px", padding: "12px 0", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                <span style={{ fontSize: "1.2rem" }}>{transaction.status === "Issued" ? "📕" : "🔄"}</span><div style={{ flex: 1 }}><strong>{transaction.title || transaction.bookId}</strong><div style={{ fontSize: "0.85rem", opacity: 0.62 }}>{transaction.studentName || transaction.studentId} · {formatDate(transaction.issueDate)}</div></div><span className={transaction.status === "Issued" ? "status-badge issued" : "status-badge returned"}>{transaction.status}</span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -2431,6 +2699,7 @@ function Dashboard({ theme, setTheme }) {
               <table className="transaction-table">
                 <thead>
                   <tr>
+                    {user?.role === "librarian" && <th>Transaction ID</th>}
                     <th>Book</th>
                     <th>Book ID</th>
                     <th>Student</th>
@@ -2445,6 +2714,9 @@ function Dashboard({ theme, setTheme }) {
                   {filteredTransactions.map(
                     (transaction) => (
                       <tr key={transaction._id}>
+                        {user?.role === "librarian" && (
+                          <td><span className="table-id">{transaction._id || "—"}</span></td>
+                        )}
                         <td>
                           <strong>
                             {transaction.title ||
@@ -2505,6 +2777,28 @@ function Dashboard({ theme, setTheme }) {
   );
 }
 
+function ToastHost() {
+  const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    function handleToast(event) {
+      setToast(event.detail);
+      window.clearTimeout(window.__librariaToastTimer);
+      window.__librariaToastTimer = window.setTimeout(() => setToast(null), 3200);
+    }
+    window.addEventListener("libraria-toast", handleToast);
+    return () => window.removeEventListener("libraria-toast", handleToast);
+  }, []);
+
+  if (!toast) return null;
+
+  return (
+    <div style={{ position: "fixed", right: "24px", bottom: "24px", zIndex: 9999, maxWidth: "380px", padding: "15px 18px", borderRadius: "14px", background: "rgba(25,20,18,0.96)", border: "1px solid rgba(255,255,255,0.12)", boxShadow: "0 18px 50px rgba(0,0,0,0.35)", color: "white", display: "flex", alignItems: "center", gap: "10px" }}>
+      <span>{toast.type === "error" ? "⚠️" : "✓"}</span><span>{toast.message}</span>
+    </div>
+  );
+}
+
 export default function App() {
   const [theme, setTheme] = useState(
     localStorage.getItem("librariaTheme") ||
@@ -2524,7 +2818,9 @@ export default function App() {
   }, [theme]);
 
   return (
-    <Routes>
+    <>
+      <ToastHost />
+      <Routes>
       <Route
         path="/"
         element={
@@ -2609,6 +2905,7 @@ export default function App() {
           />
         }
       />
-    </Routes>
+      </Routes>
+    </>
   );
 }
