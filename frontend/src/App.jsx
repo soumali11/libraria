@@ -53,7 +53,7 @@ function Navbar({ theme, setTheme }) {
         <Link to="/scan">Scan QR</Link>
         <Link to="/manage">Manage Books</Link>
 
-        {user?.role === "librarian" && (
+        {user && (
           <Link to="/dashboard">Dashboard</Link>
         )}
       </div>
@@ -1959,7 +1959,17 @@ function Dashboard({ theme, setTheme }) {
         await transactionsResponse.json();
 
       setBooks(booksData);
-      setTransactions(transactionsData);
+
+      if (user?.role === "librarian") {
+        setTransactions(transactionsData);
+      } else {
+        const myTransactions = transactionsData.filter(
+          (transaction) =>
+            transaction.studentId === user?.studentId
+        );
+
+        setTransactions(myTransactions);
+      }
     } catch (error) {
       console.error(error);
       alert("Unable to load dashboard data.");
@@ -1969,12 +1979,12 @@ function Dashboard({ theme, setTheme }) {
   }
 
   useEffect(() => {
-    if (user?.role === "librarian") {
+    if (user) {
       loadDashboard();
     }
   }, []);
 
-  if (user?.role !== "librarian") {
+  if (!user) {
     return (
       <>
         <Navbar
@@ -1985,20 +1995,20 @@ function Dashboard({ theme, setTheme }) {
         <main className="content">
           <div className="empty-box">
             <div className="scan-empty-icon">
-              🔒
+              🔐
             </div>
 
-            <h2>Librarian Access Required</h2>
+            <h2>Please Sign In</h2>
 
             <p>
-              The Library Dashboard is available only to authorized librarians.
+              Sign in as a student or librarian to access the dashboard.
             </p>
 
             <Link
-              to="/books"
+              to="/login"
               className="primary-btn"
             >
-              Back to Books
+              Sign In
             </Link>
           </div>
         </main>
@@ -2025,6 +2035,10 @@ function Dashboard({ theme, setTheme }) {
 
   const totalTransactions =
     transactions.length;
+
+  const currentlyIssued = transactions.filter(
+    (transaction) => transaction.status === "Issued"
+  ).length;
 
   const filteredTransactions =
     transactions.filter((transaction) => {
@@ -2193,15 +2207,28 @@ function Dashboard({ theme, setTheme }) {
         <div className="page-heading dashboard-heading">
           <div>
             <p className="section-label">
-              ADMIN CONTROL CENTER
+              {user?.role === "librarian"
+                ? "LIBRARIAN CONTROL CENTER"
+                : "PERSONAL DASHBOARD"}
             </p>
 
-            <h1>Library Dashboard</h1>
+            <h1>
+              {user?.role === "librarian"
+                ? "Library Dashboard"
+                : "My Dashboard"}
+            </h1>
 
             <p>
-              Monitor books, availability and library
-              transactions.
+              {user?.role === "librarian"
+                ? "Monitor books, availability and all library transactions."
+                : "View your books, borrowing history and personal transactions."}
             </p>
+
+            {user?.role !== "librarian" && (
+              <p>
+                Logged in as: {user?.name} ({user?.studentId})
+              </p>
+            )}
           </div>
 
           <button
@@ -2255,8 +2282,16 @@ function Dashboard({ theme, setTheme }) {
             </div>
 
             <div>
-              <span>Currently Issued</span>
-              <strong>{issuedCopies}</strong>
+              <span>
+                {user?.role === "librarian"
+                  ? "Currently Issued"
+                  : "My Books Issued"}
+              </span>
+              <strong>
+                {user?.role === "librarian"
+                  ? issuedCopies
+                  : currentlyIssued}
+              </strong>
             </div>
           </div>
 
@@ -2266,7 +2301,11 @@ function Dashboard({ theme, setTheme }) {
             </div>
 
             <div>
-              <span>Total Transactions</span>
+              <span>
+                {user?.role === "librarian"
+                  ? "Total Transactions"
+                  : "My Transactions"}
+              </span>
               <strong>{totalTransactions}</strong>
             </div>
           </div>
@@ -2276,10 +2315,16 @@ function Dashboard({ theme, setTheme }) {
           <div className="dashboard-panel-header">
             <div>
               <p className="section-label">
-                TRANSACTION MANAGEMENT
+                {user?.role === "librarian"
+                  ? "TRANSACTION MANAGEMENT"
+                  : "YOUR TRANSACTIONS"}
               </p>
 
-              <h2>Issued Book Tracking</h2>
+              <h2>
+                {user?.role === "librarian"
+                  ? "Issued Book Tracking"
+                  : "My Book Tracking"}
+              </h2>
             </div>
 
             <button
@@ -2293,7 +2338,11 @@ function Dashboard({ theme, setTheme }) {
           <div className="dashboard-filters">
             <input
               type="text"
-              placeholder="🔍 Search student, book or ID..."
+              placeholder={
+                user?.role === "librarian"
+                  ? "🔍 Search student, book or ID..."
+                  : "🔍 Search your books or IDs..."
+              }
               value={search}
               onChange={(e) =>
                 setSearch(e.target.value)
@@ -2372,7 +2421,9 @@ function Dashboard({ theme, setTheme }) {
               <h2>No transactions found</h2>
 
               <p>
-                Try changing your search or filters.
+                {user?.role === "librarian"
+                  ? "Try changing your search or filters."
+                  : "You do not have any transactions matching these filters."}
               </p>
             </div>
           ) : (
