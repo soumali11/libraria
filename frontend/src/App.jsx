@@ -1,4 +1,4 @@
-import { Routes, Route, Link, useNavigate, useParams } from "react-router-dom";
+import { Routes, Route, Link, useNavigate, useParams, useLocation } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Html5Qrcode } from "html5-qrcode";
@@ -11,6 +11,185 @@ import psychologyMoneyCover from "./assets/psychology-of-money.jpg";
 import "./immersive-library.css";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+const wowStyles = `
+:root {
+  --wow-purple: #8d7cff;
+  --wow-pink: #d86ca0;
+  --wow-cyan: #63d8ff;
+}
+
+body {
+  background:
+    radial-gradient(circle at 8% 5%, rgba(141,124,255,.13), transparent 27%),
+    radial-gradient(circle at 92% 22%, rgba(216,108,160,.10), transparent 28%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background-image: radial-gradient(rgba(255,255,255,.075) .7px, transparent .7px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,.5), transparent 78%);
+}
+
+.navbar {
+  position: sticky;
+  top: 0;
+  height: 82px;
+  padding: 0 clamp(18px,5vw,72px);
+  background: rgba(10,11,17,.72);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 12px 40px rgba(0,0,0,.18);
+}
+
+[data-theme="light"] .navbar { background: rgba(248,248,252,.78); }
+
+.logo {
+  position: relative;
+  font-size: 22px;
+  letter-spacing: -.4px;
+  text-shadow: 0 0 24px rgba(141,124,255,.32);
+}
+
+.logo::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -7px;
+  width: 34px;
+  height: 2px;
+  border-radius: 99px;
+  background: linear-gradient(90deg,var(--wow-purple),var(--wow-pink));
+  box-shadow: 0 0 14px rgba(141,124,255,.65);
+}
+
+.nav-links {
+  gap: 5px;
+  padding: 7px;
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 18px;
+  background: rgba(255,255,255,.025);
+}
+
+.nav-links a {
+  position: relative;
+  padding: 10px 13px;
+  border-radius: 12px;
+  transition: transform .25s ease,color .25s ease,background .25s ease,box-shadow .25s ease;
+}
+
+.nav-links a:hover { color: var(--text); transform: translateY(-1px); background: rgba(255,255,255,.055); }
+.nav-links a.nav-active { color:#fff; background:linear-gradient(135deg,rgba(141,124,255,.24),rgba(216,108,160,.13)); box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 8px 22px rgba(0,0,0,.16); }
+.nav-links a.nav-active::after { content:""; position:absolute; left:50%; bottom:4px; width:18px; height:2px; border-radius:99px; transform:translateX(-50%); background:linear-gradient(90deg,var(--wow-purple),var(--wow-pink)); }
+
+.theme-btn,.login-btn {
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.045);
+  color:var(--text);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 10px 28px rgba(0,0,0,.16);
+  transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;
+}
+.theme-btn:hover,.login-btn:hover { transform:translateY(-2px); border-color:rgba(141,124,255,.4); box-shadow:0 12px 30px rgba(141,124,255,.14); }
+
+.content {
+  position:relative;
+  width:min(1400px,92%);
+  margin:0 auto;
+  padding-top:70px;
+  padding-bottom:100px;
+}
+
+.page-heading {
+  position:relative;
+  padding:34px 38px;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:28px;
+  background:linear-gradient(135deg,rgba(141,124,255,.12),rgba(255,255,255,.035) 48%,rgba(216,108,160,.08));
+  box-shadow:0 28px 70px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.08);
+  overflow:hidden;
+}
+.page-heading::after { content:""; position:absolute; width:230px; height:230px; right:-100px; top:-125px; border:1px solid rgba(255,255,255,.09); border-radius:50%; box-shadow:0 0 80px rgba(141,124,255,.12); pointer-events:none; }
+.page-heading h1 { font-size:clamp(40px,5vw,72px); letter-spacing:-3px; text-shadow:0 12px 35px rgba(0,0,0,.25); }
+.section-label { color:#b19cff; letter-spacing:4px; font-weight:700; text-shadow:0 0 18px rgba(141,124,255,.25); }
+
+.primary-btn,.secondary-btn,.issue-btn,.return-btn,.delete-btn,.edit-btn,.qr-btn { transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease,filter .25s ease; }
+.primary-btn { border:1px solid rgba(255,255,255,.12); background:linear-gradient(135deg,#fff,#ddd8ff); color:#10111a; box-shadow:0 12px 32px rgba(141,124,255,.18),inset 0 1px 0 #fff; }
+.primary-btn:hover { transform:translateY(-3px) scale(1.01); box-shadow:0 18px 42px rgba(141,124,255,.27); }
+.secondary-btn { border-color:rgba(255,255,255,.12); background:linear-gradient(135deg,rgba(255,255,255,.075),rgba(255,255,255,.025)); box-shadow:inset 0 1px 0 rgba(255,255,255,.06); }
+.secondary-btn:hover { transform:translateY(-3px); border-color:rgba(141,124,255,.42); box-shadow:0 14px 32px rgba(0,0,0,.2),0 0 24px rgba(141,124,255,.1); }
+
+.books-grid,.category-grid,.scan-layout,.manage-layout { perspective:1400px; }
+
+.book-card {
+  position:relative;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:24px;
+  background:linear-gradient(145deg,rgba(28,29,39,.94),rgba(16,17,24,.9));
+  box-shadow:0 24px 50px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.06);
+  transform-style:preserve-3d;
+  transition:transform .45s cubic-bezier(.2,.8,.2,1),box-shadow .45s ease,border-color .45s ease;
+}
+.book-card::before { content:""; position:absolute; width:190px; height:190px; top:-115px; right:-90px; border-radius:50%; background:rgba(141,124,255,.14); filter:blur(25px); pointer-events:none; }
+.book-card:hover { transform:translateY(-10px) rotateX(2deg) rotateY(-2deg); border-color:rgba(141,124,255,.35); box-shadow:0 38px 75px rgba(0,0,0,.34),0 0 35px rgba(141,124,255,.1),inset 0 1px 0 rgba(255,255,255,.1); }
+.book-image { background:linear-gradient(135deg,#252634,#11121a); overflow:hidden; }
+.book-image img { transition:transform .65s cubic-bezier(.2,.8,.2,1),filter .65s ease; }
+.book-card:hover .book-image img { transform:scale(1.07) translateZ(15px); filter:saturate(1.12) contrast(1.04); }
+.book-info { position:relative; z-index:2; }
+.book-category { border:1px solid rgba(141,124,255,.22); background:rgba(141,124,255,.08); border-radius:99px; padding:5px 10px; display:inline-flex; }
+
+.category-card { position:relative; overflow:hidden; border:1px solid rgba(255,255,255,.1); border-radius:26px; background:linear-gradient(145deg,rgba(141,124,255,.12),rgba(255,255,255,.035)); box-shadow:0 24px 55px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.07); transform-style:preserve-3d; transition:transform .4s ease,box-shadow .4s ease,border-color .4s ease; }
+.category-card::after { content:""; position:absolute; width:160px; height:160px; right:-60px; bottom:-70px; border-radius:50%; border:1px solid rgba(255,255,255,.08); box-shadow:0 0 60px rgba(216,108,160,.13); }
+.category-card:hover { transform:translateY(-12px) rotateX(3deg) rotateY(-3deg) scale(1.01); border-color:rgba(141,124,255,.38); box-shadow:0 38px 80px rgba(0,0,0,.3),0 0 35px rgba(141,124,255,.12); }
+.category-icon { filter:drop-shadow(0 12px 22px rgba(141,124,255,.22)); transform:translateZ(28px); }
+
+.dashboard-panel,.manage-form,.manage-books,.scan-panel,.scan-result,.login-card,.qr-modal { border:1px solid rgba(255,255,255,.1); background:linear-gradient(145deg,rgba(25,26,35,.88),rgba(15,16,23,.82)); box-shadow:0 28px 65px rgba(0,0,0,.23),inset 0 1px 0 rgba(255,255,255,.065); backdrop-filter:blur(16px); }
+.dashboard-panel:hover,.manage-form:hover,.manage-books:hover,.scan-panel:hover,.scan-result:hover { border-color:rgba(141,124,255,.23); }
+.stat-card { border:1px solid rgba(255,255,255,.1); background:linear-gradient(145deg,rgba(28,29,39,.95),rgba(16,17,24,.9)); box-shadow:0 22px 45px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.07); }
+.stat-icon { filter:drop-shadow(0 8px 18px rgba(141,124,255,.18)); }
+
+.search-box,.dashboard-filters input,.dashboard-filters select,.dashboard-filters input[type="date"],.manage-form input,.manual-scan input,.login-card input { border:1px solid rgba(255,255,255,.1)!important; background:rgba(8,9,14,.62)!important; box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 10px 30px rgba(0,0,0,.12); transition:border-color .25s ease,box-shadow .25s ease,transform .25s ease; }
+.search-box:focus,.dashboard-filters input:focus,.dashboard-filters select:focus,.dashboard-filters input[type="date"]:focus,.manage-form input:focus,.manual-scan input:focus,.login-card input:focus { border-color:rgba(141,124,255,.55)!important; box-shadow:0 0 0 4px rgba(141,124,255,.08),0 12px 35px rgba(0,0,0,.16); outline:none; }
+
+.scan-tabs { padding:5px; border-radius:16px; background:rgba(255,255,255,.035); }
+.scan-tab { border:0; border-radius:12px; }
+.scan-tab.active { background:linear-gradient(135deg,var(--wow-purple),#6f5ae8); box-shadow:0 10px 28px rgba(141,124,255,.23); }
+#qr-reader { border-radius:20px; overflow:hidden; background:#08090e; border:1px solid rgba(255,255,255,.08); box-shadow:inset 0 0 0 1px rgba(255,255,255,.025),0 22px 45px rgba(0,0,0,.24); }
+#qr-reader video { border-radius:16px; }
+.scanned-book-details > div { background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.015)); border-color:rgba(255,255,255,.09); }
+
+.manage-book-row { padding:20px 14px; border-radius:16px; transition:transform .25s ease,background .25s ease; }
+.manage-book-row:hover { transform:translateX(5px); background:rgba(255,255,255,.035); }
+
+.immersive-library-page { background:radial-gradient(circle at 50% 30%,rgba(141,124,255,.08),transparent 38%),var(--bg); }
+.immersive-library-heading h1 { text-shadow:0 15px 45px rgba(0,0,0,.3); }
+.immersive-book-item,.immersive-return-card { border-color:rgba(255,255,255,.1)!important; box-shadow:0 24px 55px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.06); backdrop-filter:blur(14px); }
+
+.login-page { position:relative; overflow:hidden; background:radial-gradient(circle at 25% 30%,rgba(141,124,255,.17),transparent 28%),radial-gradient(circle at 78% 65%,rgba(216,108,160,.12),transparent 30%),var(--bg); }
+.login-page::before,.login-page::after { content:""; position:absolute; border:1px solid rgba(255,255,255,.07); border-radius:50%; pointer-events:none; animation:wowOrbit 12s linear infinite; }
+.login-page::before { width:520px; height:520px; left:-260px; top:10%; }
+.login-page::after { width:380px; height:380px; right:-180px; bottom:5%; animation-direction:reverse; }
+.login-card { border-radius:30px; transform:perspective(1200px) rotateX(1deg); }
+.login-icon { filter:drop-shadow(0 16px 28px rgba(141,124,255,.25)); }
+.qr-modal-overlay { backdrop-filter:blur(12px); background:rgba(4,5,9,.68)!important; }
+.qr-modal { border-radius:28px!important; transform:perspective(1200px) rotateX(1deg); }
+.empty-box { border:1px dashed rgba(255,255,255,.14); border-radius:26px; background:linear-gradient(145deg,rgba(141,124,255,.06),rgba(255,255,255,.02)); box-shadow:0 25px 55px rgba(0,0,0,.18); }
+
+@keyframes wowOrbit { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+@media (max-width:1100px) { .nav-links{gap:2px}.nav-links a{padding:9px 8px} }
+@media (max-width:850px) { .navbar{height:auto;min-height:76px;flex-wrap:wrap;gap:12px;padding:14px 18px}.nav-links{order:3;width:100%;overflow-x:auto;justify-content:flex-start}.nav-actions{margin-left:auto}.content{width:min(94%,700px);padding-top:38px}.page-heading{padding:25px 22px;border-radius:22px}.book-card:hover,.category-card:hover{transform:translateY(-6px)} }
+`;
+
+
 
 function notify(message, type = "success") {
   window.dispatchEvent(
@@ -55,6 +234,7 @@ function normalizeCategory(category = "") {
 
 function Navbar({ theme, setTheme }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(
     JSON.parse(localStorage.getItem("librariaUser")) || null
   );
@@ -2539,98 +2719,84 @@ function Dashboard({ theme, setTheme }) {
         </div>
 
         <div className="dashboard-stats">
-          <div className="stat-card libraria-3d-stat">
-            <div className="stat-icon">
-              📚
-            </div>
-
-            <div>
-              <span>Total Books</span>
-              <strong>{totalBooks}</strong>
-            </div>
-          </div>
-
-          <div className="stat-card libraria-3d-stat">
-            <div className="stat-icon">
-              📦
-            </div>
-
-            <div>
-              <span>Total Copies</span>
-              <strong>{totalCopies}</strong>
-            </div>
-          </div>
-
-          <div className="stat-card libraria-3d-stat">
-            <div className="stat-icon">
-              ✅
-            </div>
-
-            <div>
-              <span>Available Copies</span>
-              <strong>{availableCopies}</strong>
-            </div>
-          </div>
-
-          <div className="stat-card libraria-3d-stat">
-            <div className="stat-icon">
-              📕
-            </div>
-
-            <div>
-              <span>
-                {user?.role === "librarian"
-                  ? "Currently Issued"
-                  : "My Books Issued"}
-              </span>
-              <strong>
-                {user?.role === "librarian"
-                  ? issuedCopies
-                  : currentlyIssued}
-              </strong>
-            </div>
-          </div>
-
-          <div className="stat-card libraria-3d-stat">
-            <div className="stat-icon">
-              🔄
-            </div>
-
-            <div>
-              <span>
-                {user?.role === "librarian"
-                  ? "Total Transactions"
-                  : "My Transactions"}
-              </span>
-              <strong>{totalTransactions}</strong>
-            </div>
-          </div>
-
-          {user?.role !== "librarian" && (
+          {user?.role === "librarian" ? (
             <>
-              <div className="stat-card">
-                <div className="stat-icon">
-                  📚
-                </div>
-
+              <div className="stat-card libraria-3d-stat">
+                <div className="stat-icon">📚</div>
                 <div>
-                  <span>Books Borrowed</span>
+                  <span>Total Books</span>
+                  <strong>{totalBooks}</strong>
+                </div>
+              </div>
+
+              <div className="stat-card libraria-3d-stat">
+                <div className="stat-icon">📦</div>
+                <div>
+                  <span>Total Copies</span>
+                  <strong>{totalCopies}</strong>
+                </div>
+              </div>
+
+              <div className="stat-card libraria-3d-stat">
+                <div className="stat-icon">✅</div>
+                <div>
+                  <span>Available Copies</span>
+                  <strong>{availableCopies}</strong>
+                </div>
+              </div>
+
+              <div className="stat-card libraria-3d-stat">
+                <div className="stat-icon">📕</div>
+                <div>
+                  <span>Currently Issued</span>
+                  <strong>{issuedCopies}</strong>
+                </div>
+              </div>
+
+              <div className="stat-card libraria-3d-stat">
+                <div className="stat-icon">🔄</div>
+                <div>
+                  <span>Total Transactions</span>
+                  <strong>{totalTransactions}</strong>
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="stat-card libraria-3d-stat">
+                <div className="stat-icon">📕</div>
+                <div>
+                  <span>My Books Issued</span>
+                  <strong>{currentlyIssued}</strong>
+                </div>
+              </div>
+
+              <div className="stat-card libraria-3d-stat">
+                <div className="stat-icon">🔄</div>
+                <div>
+                  <span>My Transactions</span>
+                  <strong>{totalTransactions}</strong>
+                </div>
+              </div>
+
+              <div className="stat-card libraria-3d-stat">
+                <div className="stat-icon">📚</div>
+                <div>
+                  <span>My Books Borrowed</span>
                   <strong>{booksBorrowed}</strong>
                 </div>
               </div>
 
-              <div className="stat-card">
-                <div className="stat-icon">
-                  ↩️
-                </div>
-
+              <div className="stat-card libraria-3d-stat">
+                <div className="stat-icon">↩️</div>
                 <div>
-                  <span>Books Returned</span>
+                  <span>My Books Returned</span>
                   <strong>{returnedTransactions}</strong>
                 </div>
               </div>
             </>
           )}
+
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.3fr) minmax(280px, 0.7fr)", gap: "20px", marginBottom: "24px" }}>
@@ -2905,6 +3071,7 @@ export default function App() {
 
   return (
     <>
+      <style>{wowStyles}</style>
       <ToastHost />
       <Routes>
       <Route
