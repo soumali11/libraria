@@ -469,7 +469,7 @@ function Books({ theme, setTheme }) {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            studentId: user.studentId,
+            studentId: transaction.studentId,
             studentName: user.name,
           }),
         }
@@ -816,8 +816,8 @@ function MyLibrary({ theme, setTheme }) {
 
       const activeTransactions = data.filter(
         (transaction) =>
-          transaction.studentId === user.studentId &&
-          transaction.status === "Issued"
+          transaction.status === "Issued" &&
+          (user.role === "librarian" || transaction.studentId === user.studentId)
       );
 
       const booksResponse = await fetch(`${API}/books`);
@@ -931,22 +931,22 @@ function MyLibrary({ theme, setTheme }) {
 
         <div className="immersive-library-overlay">
           <div className="immersive-library-heading">
-            <p className="hero-small">YOUR COLLECTION</p>
+            <p className="hero-small">{user.role === "librarian" ? "LIBRARY COLLECTION" : "YOUR COLLECTION"}</p>
             <h1>
-              My
+              {user.role === "librarian" ? "Issued" : "My"}
               <br />
-              <span>Library</span>
+              <span>{user.role === "librarian" ? "Books" : "Library"}</span>
             </h1>
             <p>
-              A personal space for the books
-              <br />
-              currently in your collection.
+              {user.role === "librarian"
+                ? "Explore every book currently issued across the library."
+                : "A personal space for the books currently in your collection."}
             </p>
           </div>
 
           <div className="immersive-library-list">
             <div className="immersive-library-list-header">
-              <span>CURRENTLY BORROWED</span>
+              <span>{user.role === "librarian" ? "CURRENTLY ISSUED" : "CURRENTLY BORROWED"}</span>
               <strong>{transactions.length}</strong>
             </div>
 
@@ -970,7 +970,11 @@ function MyLibrary({ theme, setTheme }) {
                   </span>
                   <span className="immersive-book-details">
                     <strong>{transaction.title}</strong>
-                    <small>{transaction.author}</small>
+                    <small>
+                      {user.role === "librarian"
+                        ? `${transaction.studentName || "Student"} • ${transaction.studentId || "—"}`
+                        : transaction.author}
+                    </small>
                   </span>
                   <span className="immersive-book-arrow">↗</span>
                 </button>
