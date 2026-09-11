@@ -2389,9 +2389,30 @@ function Dashboard({ theme, setTheme }) {
     .sort((a, b) => b.borrowCount - a.borrowCount)
     .slice(0, 5);
 
-  const recentTransactions = [...transactions]
-    .sort((a, b) => new Date(b.issueDate || 0) - new Date(a.issueDate || 0))
-    .slice(0, 5);
+  const recentTransactions = (() => {
+    const getActivityTime = (transaction) => {
+      const issueTime = transaction.issueDate ? new Date(transaction.issueDate).getTime() : 0;
+      const returnTime = transaction.returnDate ? new Date(transaction.returnDate).getTime() : 0;
+      return Math.max(issueTime, returnTime);
+    };
+
+    const sorted = [...transactions].sort(
+      (a, b) => getActivityTime(b) - getActivityTime(a)
+    );
+
+    const seen = new Set();
+
+    return sorted.filter((transaction) => {
+      const key =
+        user?.role === "librarian"
+          ? `${transaction.bookId}-${transaction.studentId}`
+          : transaction.bookId;
+
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).slice(0, 5);
+  })();
 
   const availabilityPercent = totalCopies > 0 ? Math.round((availableCopies / totalCopies) * 100) : 0;
 
@@ -2402,8 +2423,82 @@ function Dashboard({ theme, setTheme }) {
         setTheme={setTheme}
       />
 
-      <main className="content dashboard-page">
-        <div className="page-heading dashboard-heading">
+      <main className="content dashboard-page" style={{ position: "relative", perspective: "1400px", overflow: "hidden" }}>
+        <style>{`
+          .libraria-dashboard-glow {
+            position: absolute;
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.16;
+            pointer-events: none;
+            animation: librariaFloat 9s ease-in-out infinite;
+          }
+          .libraria-dashboard-glow.one { top: -180px; right: -100px; background: #7c5cff; }
+          .libraria-dashboard-glow.two { top: 520px; left: -220px; background: #d46b9d; animation-delay: -4s; }
+          .libraria-dashboard-hero {
+            position: relative;
+            overflow: hidden;
+            transform: translateZ(0);
+            border: 1px solid rgba(255,255,255,0.12);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.08);
+            background: linear-gradient(135deg, rgba(124,92,255,0.16), rgba(255,255,255,0.035) 48%, rgba(212,107,157,0.09));
+          }
+          .libraria-dashboard-hero::before {
+            content: "";
+            position: absolute;
+            width: 260px;
+            height: 260px;
+            right: -80px;
+            top: -120px;
+            border-radius: 50%;
+            border: 1px solid rgba(255,255,255,0.12);
+            box-shadow: 0 0 70px rgba(124,92,255,0.18);
+          }
+          .libraria-3d-stat {
+            transform: perspective(900px) rotateX(1deg) translateZ(0);
+            transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
+            box-shadow: 0 18px 35px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.07);
+          }
+          .libraria-3d-stat:hover {
+            transform: perspective(900px) rotateX(0deg) rotateY(-2deg) translateY(-7px) translateZ(16px);
+            box-shadow: 0 28px 55px rgba(0,0,0,0.3), 0 0 28px rgba(124,92,255,0.12), inset 0 1px 0 rgba(255,255,255,0.1);
+            border-color: rgba(124,92,255,0.38);
+          }
+          .libraria-3d-panel {
+            transform: translateZ(0);
+            transition: transform 260ms ease, box-shadow 260ms ease;
+            box-shadow: 0 20px 55px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.055);
+          }
+          .libraria-3d-panel:hover {
+            transform: translateY(-3px) rotateX(0.4deg);
+            box-shadow: 0 28px 65px rgba(0,0,0,0.24), 0 0 35px rgba(124,92,255,0.08);
+          }
+          .libraria-orbit {
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            right: 7%;
+            top: 22%;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 50%;
+            transform: rotateX(68deg) rotateZ(18deg);
+            pointer-events: none;
+            opacity: 0.7;
+          }
+          @keyframes librariaFloat {
+            0%, 100% { transform: translate3d(0,0,0) scale(1); }
+            50% { transform: translate3d(25px,-22px,0) scale(1.08); }
+          }
+          @media (max-width: 800px) {
+            .libraria-orbit { display: none; }
+          }
+        `}</style>
+        <div className="libraria-dashboard-glow one" />
+        <div className="libraria-dashboard-glow two" />
+        <div className="libraria-orbit" />
+        <div className="page-heading dashboard-heading libraria-dashboard-hero" style={{ padding: "28px 30px", borderRadius: "24px", marginBottom: "26px" }}>
           <div>
             <p className="section-label">
               {user?.role === "librarian"
@@ -2442,7 +2537,7 @@ function Dashboard({ theme, setTheme }) {
         </div>
 
         <div className="dashboard-stats">
-          <div className="stat-card">
+          <div className="stat-card libraria-3d-stat">
             <div className="stat-icon">
               📚
             </div>
@@ -2453,7 +2548,7 @@ function Dashboard({ theme, setTheme }) {
             </div>
           </div>
 
-          <div className="stat-card">
+          <div className="stat-card libraria-3d-stat">
             <div className="stat-icon">
               📦
             </div>
@@ -2464,7 +2559,7 @@ function Dashboard({ theme, setTheme }) {
             </div>
           </div>
 
-          <div className="stat-card">
+          <div className="stat-card libraria-3d-stat">
             <div className="stat-icon">
               ✅
             </div>
@@ -2475,7 +2570,7 @@ function Dashboard({ theme, setTheme }) {
             </div>
           </div>
 
-          <div className="stat-card">
+          <div className="stat-card libraria-3d-stat">
             <div className="stat-icon">
               📕
             </div>
@@ -2494,7 +2589,7 @@ function Dashboard({ theme, setTheme }) {
             </div>
           </div>
 
-          <div className="stat-card">
+          <div className="stat-card libraria-3d-stat">
             <div className="stat-icon">
               🔄
             </div>
@@ -2537,7 +2632,7 @@ function Dashboard({ theme, setTheme }) {
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.3fr) minmax(280px, 0.7fr)", gap: "20px", marginBottom: "24px" }}>
-          <div className="dashboard-panel">
+          <div className="dashboard-panel libraria-3d-panel">
             <div className="dashboard-panel-header"><div><p className="section-label">ANALYTICS</p><h2>{user?.role === "librarian" ? "Library Insights" : "Your Reading Insights"}</h2></div></div>
             <div style={{ display: "grid", gap: "18px" }}>
               <div>
@@ -2556,7 +2651,7 @@ function Dashboard({ theme, setTheme }) {
             </div>
           </div>
 
-          <div className="dashboard-panel">
+          <div className="dashboard-panel libraria-3d-panel">
             <div className="dashboard-panel-header"><div><p className="section-label">TOP PICKS</p><h2>Most Borrowed</h2></div></div>
             <div style={{ display: "grid", gap: "12px" }}>
               {popularBooks.length === 0 ? <p style={{ opacity: 0.65 }}>No borrowing data yet.</p> : popularBooks.map((book, index) => (
